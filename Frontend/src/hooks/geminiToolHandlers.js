@@ -11,17 +11,26 @@ export const processToolCalls = (functionCalls, stateRef, callbacks) => {
   const toolResponses = [];
 
   // Helper to find a specific question in the form based on what Gemini asks for
+
+  // Feedback loop - if gemini sends the correct parameter, it will return the fromfield 
+  // else will send back Gemini to send the corrrect parameters
+
   const findField = (formFields, label) => {
+
     if (!formFields || !label) return null;
     const labelLower = String(label).toLowerCase().trim();
-    
-    // 1. Try matching the exact ID
+
+    // 1. Try matching the exact ID (key of a formfield matching) 
+
     for (const key of Object.keys(formFields)) {
       if (key.toLowerCase().trim() === labelLower) {
         return { key, field: formFields[key] };
       }
     }
-    
+
+    // ex- answer_1: {type:"subjective" , label:"answer_1", question: "What is the answer to the first question?", options:[], filled:false}
+    // formfield example
+
     // 2. Try matching the exact title (like "Question 1")
     for (const key of Object.keys(formFields)) {
       const fieldLabelLower = (formFields[key]?.label || "").toLowerCase().trim();
@@ -29,6 +38,8 @@ export const processToolCalls = (functionCalls, stateRef, callbacks) => {
         return { key, field: formFields[key] };
       }
     }
+
+    // matching label ----> of answer_1 object
 
     // 3. If Gemini just said "1", see if it matches "Question 1"
     for (const key of Object.keys(formFields)) {
@@ -38,45 +49,79 @@ export const processToolCalls = (functionCalls, stateRef, callbacks) => {
       }
     }
 
+    // Matching just the number -----> if gemini said "1" we will match it with "1a" label
+
     return null;
   };
 
   for (const call of functionCalls) {
+
+    // 1. Function 1
+    // Response from Gemini to call get_current_screen_question
+
     if (call?.name === "get_current_screen_question") {
-      // Get the absolute latest data so Gemini doesn't read old answers
+
+      // Get the latest data so Gemini doesn't read old answers
       const { currentKey, formFields } = stateRef.current;
+      // stateref return the current screen data along with the formfields
+
       let outputMsg = "No question is currently visible.";
 
       if (currentKey && formFields && formFields[currentKey]) {
+
+        // formfields contain the data of current screen 
+        // these values are extracted and sent to Gemini to get the context for the curretn question 
+        // and it can answer accurately based on the context we provided 
+
         const field = formFields[currentKey];
         const heading = field.heading || "No heading";
         const question = field.question || "No question text";
         const label = field.label || currentKey;
         const answerStatus = field.filled ? `Already answered: "${field.value}"` : "Not yet answered";
-        
+
         let optionsText = "";
+
         if (field.options && Array.isArray(field.options)) {
-            const formattedOptions = field.options.map(opt => `[${opt.label}] ${opt.text}`).join(' | ');
-            optionsText = `\n- Options: ${formattedOptions}`;
+          const formattedOptions = field.options.map(opt => `[${opt.label}] ${opt.text}`).join(' | ');
+          optionsText = `\n- Options: ${formattedOptions}`;
         }
-        
+
         outputMsg = `Current question on screen:\n- Heading: ${heading}\n- Label: ${label}\n- Question: ${question}${optionsText}\n- Status: ${answerStatus}`;
       }
-      
+
       toolResponses.push({
         id: call.id,
         name: call.name,
         response: { output: outputMsg },
       });
 
-    } else if (call?.name === "fill_form_field") {
+      // toolsresponses is an array which contains all the responses given after calling functions 
+      // and it is passed to Gemini back.
+
+    }
+
+    // 2. Function 2
+    // Response from Gemini to call fill_form_field
+
+    else if (call?.name === "fill_form_field") {
+
+      // args object sent by Gemini back 
       const args = call?.args || {};
       const label = args.label;
       const value = args.value;
       const overwrite = args.overwrite || false;
 
+      // label -----> question 1 label
+      // value -----> answer
+      // overwrite -----> true/false 
+      // if true --> overwrites the previous answer 
+      // if false --> appends the new answer to the previous answer
+
       const { formFields } = stateRef.current;
       const found = findField(formFields, label);
+
+      // If the question with the exact label is not found 
+      // error is sent back to gemini using toolsresponses array 
 
       if (!found) {
         toolResponses.push({
@@ -88,6 +133,7 @@ export const processToolCalls = (functionCalls, stateRef, callbacks) => {
       }
 
       // Get the very latest answer so we don't accidentally overwrite anything
+
       const existingValue = found.field.value || "";
       const finalValue = overwrite ? value : (existingValue ? `${existingValue} ${value}` : value);
 
@@ -100,19 +146,28 @@ export const processToolCalls = (functionCalls, stateRef, callbacks) => {
         { role: "SYS", text: `Filled: ${found.field.label} = ${finalValue}` },
       ]);
 
+      // response sent back to gemini
       toolResponses.push({
         id: call.id,
         name: call.name,
         response: { output: `Successfully filled. The exact recorded answer for "${found.field.label}" is now: ${finalValue}` },
       });
 
-    } else if (call?.name === "reset_form_field") {
+    }
+
+    // 3. Function 3
+    // Response from Gemini to call reset_form_field
+
+    else if (call?.name === "reset_form_field") {
+
       const args = call?.args || {};
       const label = args.label;
 
       const { formFields } = stateRef.current;
+      // if found returns the form fields . If not found it returns null
       const found = findField(formFields, label);
 
+      // if found== null --> go back to gemini sending error message
       if (!found) {
         toolResponses.push({
           id: call.id,
@@ -131,13 +186,19 @@ export const processToolCalls = (functionCalls, stateRef, callbacks) => {
         { role: "SYS", text: `Reset: ${found.field.label}` },
       ]);
 
+      // response sent back to gemini
       toolResponses.push({
         id: call.id,
         name: call.name,
         response: { output: `Successfully reset "${found.field.label}"` },
       });
 
-    } else if (call?.name === "next_question") {
+    }
+
+    // 4. Function 4
+    // Response from Gemini to call next_question
+
+    else if (call?.name === "next_question") {
       if (typeof onNextQuestion === "function") {
         onNextQuestion();
       }
@@ -153,7 +214,12 @@ export const processToolCalls = (functionCalls, stateRef, callbacks) => {
         response: { output: `Successfully moved to next question` },
       });
 
-    } else if (call?.name === "prev_question") {
+    }
+
+    // 5. Function 5
+    // Response from Gemini to call prev_question
+
+    else if (call?.name === "prev_question") {
       if (typeof onPrevQuestion === "function") {
         onPrevQuestion();
       }
@@ -169,13 +235,20 @@ export const processToolCalls = (functionCalls, stateRef, callbacks) => {
         response: { output: `Successfully moved to previous question` },
       });
 
-    } else if (call?.name === "goto_question") {
+    }
+
+    // 6. Function 6
+    // Response from Gemini to call goto_question    
+
+    else if (call?.name === "goto_question") {
+
       const args = call?.args || {};
       const label = args.label;
 
       const { formFields } = stateRef.current;
       const found = findField(formFields, label);
 
+      // if found == null --> sending error message back to gemini 
       if (!found) {
         toolResponses.push({
           id: call.id,
@@ -200,7 +273,13 @@ export const processToolCalls = (functionCalls, stateRef, callbacks) => {
         response: { output: `Successfully jumped to question "${found.field.label}"` },
       });
 
-    } else if (call?.name === "read_recorded_answer") {
+    }
+
+    // 7. Function 7
+    // Response from Gemini to call read_recorded_answer    
+
+    else if (call?.name === "read_recorded_answer") {
+
       const args = call?.args || {};
       const label = args.label;
 

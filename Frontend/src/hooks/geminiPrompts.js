@@ -59,15 +59,7 @@ export const getSetupPrompt = (formFields, currentKey) => {
     - If the student says they want to answer in points, you MUST follow this structure exactly, placing each point on a new line:
       Point 1: [their first point content]
       Point 2: [their second point content]
-    ${formFields?.Instruction ? Object.values(formFields.Instruction).map((inst, i) => `${i + 1}. ${inst}`).join('\n') : "None"}
 
-    EXAM STATUS (Answered / Unanswered Questions):
-    ${formFields ? Object.keys(formFields).map(key => {
-    if (key === 'Instruction' || key === 'headings') return null;
-    const field = formFields[key];
-    if (!field?.label) return null;
-    return `- ${field.label}: ${field.filled ? "ANSWERED" : "NOT ANSWERED"}`;
-  }).filter(Boolean).join('\n    ') : "No questions found."}
 
     CRITICAL RULES RECAP (NEVER FORGET THESE):
     PAY EXTREMELY CLOSE ATTENTION to all mathematical operations dictated by the student and in the Question (plus, minus, multiply, divide, fractions). You MUST accurately transcribe the exact signs used. DO NOT accidentally miss a minus sign or mistake a plus for a minus.
@@ -87,15 +79,15 @@ export const getSetupPrompt = (formFields, currentKey) => {
 
 // A hidden reminder message we send every few minutes so Gemini doesn't forget its rules
 
-export const getSystemReminderPrompt = (formFields, currentKey) => {
-  const fullPrompt = getSetupPrompt(formFields, currentKey);
-  return `
-    [SYSTEM AUTOMATED REMINDER - DO NOT READ THIS ALOUD, DO NOT ACKNOWLEDGE THIS MESSAGE]
-    Just a quick reminder of your instructions so you do not lose context. Here are your complete instructions again:
-    
-    ${fullPrompt}
-  `.trim();
-};
+// export const getSystemReminderPrompt = (formFields, currentKey) => {
+//   const fullPrompt = getSetupPrompt(formFields, currentKey);
+//   return `
+//     [SYSTEM AUTOMATED REMINDER - DO NOT READ THIS ALOUD, DO NOT ACKNOWLEDGE THIS MESSAGE]
+//     Just a quick reminder of your instructions so you do not lose context. Here are your complete instructions again:
+
+//     ${fullPrompt}
+//   `.trim();
+// };
 
 // What we tell Gemini to say when the exam is completely finished
 
@@ -107,3 +99,13 @@ export const getCompletionPrompt = () => {
     Keep it brief and encouraging.
   `;
 };
+
+//     ${formFields?.Instruction ? Object.values(formFields.Instruction).map((inst, i) => `${i + 1}. ${inst}`).join('\n') : "None"}
+
+//   EXAM STATUS (Answered / Unanswered Questions):
+//   ${formFields ? Object.keys(formFields).map(key => {
+//   if (key === 'Instruction' || key === 'headings') return null;
+//   const field = formFields[key];
+//   if (!field?.label) return null;
+//   return `- ${field.label}: ${field.filled ? "ANSWERED" : "NOT ANSWERED"}`;
+// }).filter(Boolean).join('\n    ') : "No questions found."}

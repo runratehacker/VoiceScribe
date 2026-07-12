@@ -1,6 +1,10 @@
+// These tools are sent to Gemini exxactly once per session at the very beginning of the websocket
+// connection . They are sent as part of the intial setup message
+
 export const geminiTools = [
   {
     functionDeclarations: [
+      // Function 1 - fillformfield 
       {
         name: "fill_form_field",
         description: "Fill exactly one form field by label.",
@@ -14,6 +18,7 @@ export const geminiTools = [
           required: ["label", "value"],
         },
       },
+      // Function 2 - resetformfield
       {
         name: "reset_form_field",
         description: "Clear and reset the filled answer for a specific form field.",
@@ -25,6 +30,7 @@ export const geminiTools = [
           required: ["label"],
         },
       },
+      // Function 3 - next_question
       {
         name: "next_question",
         description: "Move to the next question. Call this ONLY after the user has successfully provided an answer for the current question and explicitly asks you to go to the next question or if the user wants to skip the current question.",
@@ -33,6 +39,7 @@ export const geminiTools = [
           properties: {},
         },
       },
+      // Function 4 - prev_question
       {
         name: "prev_question",
         description: "Move back to the previous question. Call this ONLY when the user explicitly asks to go back to the previous question.",
@@ -41,6 +48,7 @@ export const geminiTools = [
           properties: {},
         },
       },
+      // Function 5 - getcurrentscreenquestion
       {
         name: "get_current_screen_question",
         description: "Returns the full details of the question currently visible on the student's screen: heading, question text, label, and current answer status. You MUST call this every time a new question appears (after next_question, prev_question, goto_question, or on session start) so you know exactly what to read aloud.Even before reading any question on the screen call this function and only then start reading the question.",
@@ -49,6 +57,7 @@ export const geminiTools = [
           properties: {},
         },
       },
+      // Function 6 - goto_question
       {
         name: "goto_question",
         description: "Jump to a specific question on the screen. Call this ONLY when the user explicitly asks to go to a specific question (e.g. 'go to question 2b').",
@@ -60,6 +69,7 @@ export const geminiTools = [
           required: ["label"],
         },
       },
+      // Function 7 - read_recorded_answer
       {
         name: "read_recorded_answer",
         description: "Fetch the currently recorded answer for a specific question. Call this when the user asks what they have recorded for a specific question.",

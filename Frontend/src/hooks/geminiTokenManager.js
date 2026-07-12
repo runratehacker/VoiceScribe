@@ -3,19 +3,28 @@
 
 import { useRef, useCallback } from 'react';
 import axios from 'axios';
-import { TOKEN_API_URL, TOKEN_REFRESH_BUFFER_MS } from './geminiConfig';
+import { getTokenApiUrl, TOKEN_REFRESH_BUFFER_MS, GEMINI_MODEL } from './geminiConfig';
 
 export const useGeminiToken = () => {
   const tokenRef = useRef(null);                  // The actual token string
   const tokenExpiryRef = useRef(null);            // When the token dies
   const tokenRefreshTimerRef = useRef(null);      // Timer to fetch a new token
-
+  const tokenLimitsRef = useRef({ inputTokenLimit: 2000000, outputTokenLimit: 8192 }); // Default fallback limits
 
   // Asks our backend for a brand new token
   const fetchToken = useCallback(async () => {
-    const { data } = await axios.get(TOKEN_API_URL);
+
+    const { data } = await axios.get(getTokenApiUrl(GEMINI_MODEL.replace('models/', '')));
+
     if (!data?.token) throw new Error("Ephemeral token missing from backend response");
     tokenRef.current = data.token;
+    
+    if (data.inputTokenLimit) {
+      tokenLimitsRef.current = {
+        inputTokenLimit: data.inputTokenLimit,
+        outputTokenLimit: data.outputTokenLimit
+      };
+    }
 
     // Save when it expires so we know when to grab the next one
     if (data.expireTime) {
@@ -64,6 +73,7 @@ export const useGeminiToken = () => {
 
   return {
     tokenRef,
+    tokenLimitsRef,
     fetchToken,
     scheduleTokenRefresh,
     clearTokenRefreshTimer,

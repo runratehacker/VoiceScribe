@@ -6,7 +6,7 @@
 export const GEMINI_MODEL = "models/gemini-3.1-flash-live-preview";
 
 // Where we get our temporary access tokens
-export const TOKEN_API_URL = "http://localhost:8044/api/live/token";
+export const getTokenApiUrl = (model) => `http://localhost:8044/api/live/token?model=${encodeURIComponent(model)}`;
 
 // How many times and how fast to retry if the connection drops
 export const MAX_RECONNECT_RETRIES = 3;
@@ -33,6 +33,7 @@ export const buildWsUrl = (token) => {
 
 
 // Builds the very first message we send to Gemini with instructions and tools
+// System prompt 
 
 export const buildSetupMessage = (systemPromptText, tools, { sessionHandle, isReconnect } = {}) => {
   const setupMessage = {
@@ -49,7 +50,8 @@ export const buildSetupMessage = (systemPromptText, tools, { sessionHandle, isRe
         temperature: TEMPERATURE,
         maxOutputTokens: MAX_OUTPUT_TOKENS,
         thinkingConfig: {
-          thinkingBudget: 2048, // Give the AI more time to think deeply
+          thinkingLevel: "low", // Ask Gemini to think more deeply about its responses
+          // thinkingbudget : 2048  is not supported in gemini 3.1 flash live preview
         },
       },
       tools,

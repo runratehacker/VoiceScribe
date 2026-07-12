@@ -4,7 +4,7 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { geminiTools } from './geminiTools';
-import { getSetupPrompt, getSystemReminderPrompt, getCompletionPrompt } from './geminiPrompts';
+import { getSetupPrompt, getCompletionPrompt } from './geminiPrompts';
 import { processToolCalls } from './geminiToolHandlers';
 import { buildWsUrl, buildSetupMessage, MAX_RECONNECT_RETRIES, BASE_RECONNECT_DELAY_MS } from './geminiConfig';
 import { useGeminiToken } from './geminiTokenManager';
@@ -13,6 +13,12 @@ import { parseWsMessage, categorizeMessage, MSG_TYPES } from './geminiMessagePar
 export const useGeminiLive = ({ onFieldFilled, onFieldReset, onAudioReceived, formFields, currentKey, onNextQuestion, onPrevQuestion, onGoToQuestion }) => {
   const [wsState, setWsState] = useState("idle"); // "idle" | "connecting" | "connected" | "ready" | "reconnecting" | "error"
   const [messages, setMessages] = useState([]);
+  const [tokenStats, setTokenStats] = useState({
+    contextSize: { prompt: 0, response: 0, total: 0 },
+    billedTokens: { prompt: 0, response: 0, total: 0 },
+    limits: { inputTokenLimit: 2000000, outputTokenLimit: 8192 },
+    contextPercentage: 0
+  });
 
   const liveWsRef = useRef(null);
   const isLiveReadyRef = useRef(false);
@@ -25,7 +31,7 @@ export const useGeminiLive = ({ onFieldFilled, onFieldReset, onAudioReceived, fo
   const connectPromiseRef = useRef({ resolve: null, reject: null });
 
   // Manage our temporary access tokens so they don't expire mid-exam
-  const { tokenRef, fetchToken, scheduleTokenRefresh, clearTokenRefreshTimer } = useGeminiToken();
+  const { tokenRef, tokenLimitsRef, fetchToken, scheduleTokenRefresh, clearTokenRefreshTimer } = useGeminiToken();
 
   // Store the latest form data in a ref so the WebSocket doesn't use old data
   const stateRef = useRef({ formFields, currentKey });
@@ -62,6 +68,7 @@ export const useGeminiLive = ({ onFieldFilled, onFieldReset, onAudioReceived, fo
 
     // Handle any message Gemini sends back
     liveWsRef.current.onmessage = async (event) => {
+
       const msg = await parseWsMessage(event.data);
       if (!msg) return;
 
@@ -81,6 +88,8 @@ export const useGeminiLive = ({ onFieldFilled, onFieldReset, onAudioReceived, fo
           setWsState("ready");
           if (isReconnect) {
             console.log("Session resumed successfully after reconnection");
+          } else {
+            console.log("✅ Brand new session started successfully!");
           }
           if (resolve) resolve();
           else if (connectPromiseRef.current.resolve) {
@@ -125,6 +134,63 @@ export const useGeminiLive = ({ onFieldFilled, onFieldReset, onAudioReceived, fo
               toolResponse: { functionResponses: toolResponses },
             }));
           }
+          break;
+        }
+
+        case MSG_TYPES.TOKEN_USAGE: {
+          setTokenStats((prev) => {
+            // Include total if provided by the API, otherwise calculate it
+            const total = data.totalTokenCount ||
+              (data.promptTokenCount || 0) + (data.responseTokenCount || 0) + (data.cachedContentTokenCount || 0);
+
+            const newContext = {
+              promptTokenCount: data.promptTokenCount || 0,
+              cachedContentTokenCount: data.cachedContentTokenCount || 0,
+              responseTokenCount: data.responseTokenCount || 0,
+              toolUsePromptTokenCount: data.toolUsePromptTokenCount || 0,
+              thoughtsTokenCount: data.thoughtsTokenCount || 0,
+              totalTokenCount: total,
+              promptTokensDetails: data.promptTokensDetails || [],
+              cacheTokensDetails: data.cacheTokensDetails || [],
+              responseTokensDetails: data.responseTokensDetails || [],
+              toolUsePromptTokensDetails: data.toolUsePromptTokensDetails || [],
+            };
+
+            const newBilled = {
+              prompt: prev.billedTokens.prompt + newContext.promptTokenCount,
+              response: prev.billedTokens.response + newContext.responseTokenCount,
+              total: prev.billedTokens.total + total,
+            };
+
+            const limits = tokenLimitsRef.current;
+            const contextPercentage = limits.inputTokenLimit > 0
+              ? Number(((total / limits.inputTokenLimit) * 100).toFixed(4))
+              : 0;
+
+            // Log a detailed analytics block to the browser console
+            console.log(`📊 Gemini Token Analytics (Used: ${contextPercentage}%)`);
+
+            // Extract just the numerical counts for a clean table
+            const tableData = {
+              "Prompt Tokens": newContext.promptTokenCount,
+              "Cached Content Tokens": newContext.cachedContentTokenCount,
+              "Response Tokens": newContext.responseTokenCount,
+              "Tool Use Prompt Tokens": newContext.toolUsePromptTokenCount,
+              "Thoughts Tokens": newContext.thoughtsTokenCount,
+              "Total Tokens (This Turn)": newContext.totalTokenCount,
+              "Context Limit": limits.inputTokenLimit,
+            };
+
+            console.table(tableData);
+
+            // Log the detailed arrays separately so they don't mess up the table format
+            console.log("Prompt Details:", newContext.promptTokensDetails);
+            console.log("Cache Details:", newContext.cacheTokensDetails);
+            console.log("Response Details:", newContext.responseTokensDetails);
+            console.log("Tool Use Prompt Details:", newContext.toolUsePromptTokensDetails);
+
+            return { contextSize: newContext, billedTokens: newBilled, limits, contextPercentage };
+          });
           break;
         }
 
@@ -226,9 +292,15 @@ export const useGeminiLive = ({ onFieldFilled, onFieldReset, onAudioReceived, fo
         // Save these so we can resolve them later if we have to auto-reconnect
         connectPromiseRef.current = { resolve, reject };
 
-        // Reset our retry counters
+        // Reset our retry counters and tokens
         userDisconnectedRef.current = false;
         reconnectAttemptRef.current = 0;
+        setTokenStats({
+          contextSize: { prompt: 0, response: 0, total: 0 },
+          billedTokens: { prompt: 0, response: 0, total: 0 },
+          limits: tokenLimitsRef.current,
+          contextPercentage: 0
+        });
 
         // Get a fresh token
         await fetchToken();
@@ -292,36 +364,37 @@ export const useGeminiLive = ({ onFieldFilled, onFieldReset, onAudioReceived, fo
   }, []);
 
   // Sends a hidden text message to remind Gemini of its instructions
-  const sendSystemReminder = useCallback(() => {
-    if (!isLiveReadyRef.current || !liveWsRef.current || liveWsRef.current.readyState !== WebSocket.OPEN) return;
+  // const sendSystemReminder = useCallback(() => {
+  //   if (!isLiveReadyRef.current || !liveWsRef.current || liveWsRef.current.readyState !== WebSocket.OPEN) return;
 
-    liveWsRef.current.send(JSON.stringify({
-      clientContent: {
-        turns: [
-          {
-            role: "user",
-            parts: [{ text: getSystemReminderPrompt(formFields, stateRef.current.currentKey) }],
-          },
-        ],
-        turnComplete: true,
-      },
-    }));
-  }, [formFields]);
+  //   liveWsRef.current.send(JSON.stringify({
+  //     clientContent: {
+  //       turns: [
+  //         {
+  //           role: "user",
+  //           parts: [{ text: getSystemReminderPrompt(formFields, stateRef.current.currentKey) }],
+  //         },
+  //       ],
+  //       turnComplete: true,
+  //     },
+  //   }));
+  // }, [formFields]);
 
   // Fire the reminder every 3 minutes so Gemini stays on track
-  useEffect(() => {
-    let intervalId;
-    if (wsState === "ready") {
-      intervalId = setInterval(() => {
-        sendSystemReminder();
-      }, 3 * 60 * 1000); // 3 minutes
-    }
-    return () => {
-      if (intervalId) clearInterval(intervalId);
-    };
-  }, [wsState, sendSystemReminder]);
+  // useEffect(() => {
+  //   let intervalId;
+  //   if (wsState === "ready") {
+  //     intervalId = setInterval(() => {
+  //       sendSystemReminder();
+  //     }, 3 * 60 * 1000); // 3 minutes
+  //   }
+  //   return () => {
+  //     if (intervalId) clearInterval(intervalId);
+  //   };
+  // }, [wsState, sendSystemReminder]);
 
   // Tells Gemini the exam is over so it can say goodbye
+
   const sendCompletionMessage = useCallback(() => {
     if (!isLiveReadyRef.current || !liveWsRef.current || liveWsRef.current.readyState !== WebSocket.OPEN) return;
 
@@ -347,7 +420,7 @@ export const useGeminiLive = ({ onFieldFilled, onFieldReset, onAudioReceived, fo
     };
   }, [disconnect, clearTokenRefreshTimer]);
 
-  return { connect, disconnect, sendAudioChunk, sendCompletionMessage, messages, wsState };
+  return { connect, disconnect, sendAudioChunk, sendCompletionMessage, messages, wsState, tokenStats };
 };
 
 export default useGeminiLive;

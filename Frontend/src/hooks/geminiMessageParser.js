@@ -28,6 +28,7 @@ export const MSG_TYPES = {
   SETUP_COMPLETE: 'setupComplete',   // Gemini is ready to start listening
   MODEL_OUTPUT: 'modelOutput',       // Gemini is speaking or sending text
   TOOL_CALL: 'toolCall',             // Gemini wants us to do something (like fill a form)
+  TOKEN_USAGE: 'tokenUsage',         // Gemini sent us official token usage stats
   UNKNOWN: 'unknown',                // We don't know what this is
 };
 
@@ -36,6 +37,7 @@ export const MSG_TYPES = {
 // This keeps our main WebSocket code clean and easy to read.
 
 export const categorizeMessage = (msg) => {
+
   // 1) Gemini sent a conversation ID
   if (msg.sessionResumptionUpdate?.newHandle) {
     return {
@@ -73,6 +75,13 @@ export const categorizeMessage = (msg) => {
     return { type: MSG_TYPES.TOOL_CALL, data: functionCalls };
   }
 
-  // 5) Catch-all for weird messages
+  // 5) Gemini sent us official token usage metrics
+  // Depending on the exact model version, this can be inside a serverContent block or at the root
+  const usage = msg?.serverContent?.usageMetadata || msg?.usageMetadata;
+  if (usage) {
+    return { type: MSG_TYPES.TOKEN_USAGE, data: usage };
+  }
+
+  // 6) Catch-all for weird messages
   return { type: MSG_TYPES.UNKNOWN, data: msg };
 };

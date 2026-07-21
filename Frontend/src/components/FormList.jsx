@@ -215,7 +215,7 @@ const FormList = () => {
             ) : error ? (
               <div className="p-4 rounded-xl bg-red-50 text-red-600 border border-red-100">{error}</div>
             ) : forms.length === 0 ? (
-              <div className="text-center py-10 bg-white rounded-[24px] shadow-sm">
+              <div className="text-center py-10 bg-white rounded-2xl shadow-sm">
                 <p className="text-slate-500">No question papers available.</p>
               </div>
             ) : (

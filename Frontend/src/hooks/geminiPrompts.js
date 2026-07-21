@@ -5,6 +5,9 @@ export const getSetupPrompt = (formFields, currentKey) => {
   return `
     You are a voice-based exam assistant for FormQues.
 
+    Just say that I am a voice based assistant only when you are in question no 1a rest everytime 
+    call "get_current_screen_question" and then read the question aloud
+
     To get the current question details, ALWAYS call "get_current_screen_question" first.
 
 
@@ -99,6 +102,12 @@ export const getCompletionPrompt = () => {
     Keep it brief and encouraging.
   `;
 };
+
+// Sent silently right after SETUP_COMPLETE to make Gemini speak first.
+// The student should never have to break the silence — Gemini kicks off immediately.
+export const getSessionStartPrompt = () =>
+  `[SYSTEM] Session is now live. Begin immediately: call "get_current_screen_question" read the current question number and question aloud. Do not wait for the student to speak first.
+Go through the system prompt again `;
 
 //     ${formFields?.Instruction ? Object.values(formFields.Instruction).map((inst, i) => `${i + 1}. ${inst}`).join('\n') : "None"}
 

@@ -4,9 +4,9 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { geminiTools } from './geminiTools';
-import { getSetupPrompt, getCompletionPrompt } from './geminiPrompts';
+import { getSetupPrompt, getCompletionPrompt, getSessionStartPrompt } from './geminiPrompts';
 import { processToolCalls } from './geminiToolHandlers';
-import { buildWsUrl, buildSetupMessage, MAX_RECONNECT_RETRIES, BASE_RECONNECT_DELAY_MS } from './geminiConfig';
+import { buildWsUrl, buildSetupMessage, MAX_RECONNECT_RETRIES, BASE_RECONNECT_DELAY_MS, SESSION_RESET_EVERY_N_QUESTIONS } from './geminiConfig';
 import { useGeminiToken } from './geminiTokenManager';
 import { parseWsMessage, categorizeMessage, MSG_TYPES } from './geminiMessageParser';
 
@@ -23,6 +23,10 @@ export const useGeminiLive = ({ onFieldFilled, onFieldReset, onAudioReceived, fo
   const liveWsRef = useRef(null);
   const isLiveReadyRef = useRef(false);
   const sessionHandleRef = useRef(null);
+  const cumulativeAudioTokensRef = useRef(0);
+  const prevPromptTokensRef = useRef(0); // tracks last promptTokenCount to detect API-side compression
+  const questionsAnsweredRef = useRef(0); // counts next_question calls to trigger periodic session resets
+  const sessionTokensRef = useRef({ prompt: 0, response: 0, thoughts: 0, toolUse: 0, total: 0 }); // cumulative across all turns
 
   // Keep track of connection attempts and timers
   const userDisconnectedRef = useRef(false);
@@ -70,18 +74,20 @@ export const useGeminiLive = ({ onFieldFilled, onFieldReset, onAudioReceived, fo
     liveWsRef.current.onmessage = async (event) => {
 
       const msg = await parseWsMessage(event.data);
+
       if (!msg) return;
 
+
       const { type, data } = categorizeMessage(msg);
+      // console.log(type, data);
 
       switch (type) {
-        // Save the session ID in case we need to reconnect later
         case MSG_TYPES.SESSION_HANDLE:
           sessionHandleRef.current = data;
-          console.log("Saved session handle:", data);
+          console.log("Session handle received and saved for resumption:", data);
           break;
 
-        // Setup is done, so we can start sending audio
+        // Setup is done — kick off the conversation by nudging Gemini to speak first
         case MSG_TYPES.SETUP_COMPLETE:
           isLiveReadyRef.current = true;
           reconnectAttemptRef.current = 0;
@@ -95,6 +101,15 @@ export const useGeminiLive = ({ onFieldFilled, onFieldReset, onAudioReceived, fo
           else if (connectPromiseRef.current.resolve) {
             connectPromiseRef.current.resolve();
             connectPromiseRef.current = { resolve: null, reject: null };
+          }
+          // Send a silent kickstart so Gemini speaks first without waiting for the student
+          if (liveWsRef.current?.readyState === WebSocket.OPEN) {
+            liveWsRef.current.send(JSON.stringify({
+              clientContent: {
+                turns: [{ role: 'user', parts: [{ text: getSessionStartPrompt() }] }],
+                turnComplete: true,
+              },
+            }));
           }
           break;
 
@@ -120,10 +135,48 @@ export const useGeminiLive = ({ onFieldFilled, onFieldReset, onAudioReceived, fo
 
         // Gemini wants to use one of our tools (like filling a field or going to the next question)
         case MSG_TYPES.TOOL_CALL: {
+
+          // Wrap onNextQuestion so we can count how many questions have been answered.
+          // Every SESSION_RESET_EVERY_N_QUESTIONS questions we silently restart the WS
+          // to give Gemini a completely fresh context window.
+          const onNextQuestionWithReset = SESSION_RESET_EVERY_N_QUESTIONS > 0
+            ? (...args) => {
+              if (typeof onNextQuestion === 'function') onNextQuestion(...args);
+              questionsAnsweredRef.current += 1;
+              if (questionsAnsweredRef.current % SESSION_RESET_EVERY_N_QUESTIONS === 0) {
+                console.warn(
+                  `🔄 Session reset triggered after ${questionsAnsweredRef.current} questions. ` +
+                  `Reconnecting for a fresh context window...`
+                );
+                // Close the current connection without marking it as user-initiated
+                // so our reset doesn't block future reconnects.
+                isLiveReadyRef.current = false;
+                if (liveWsRef.current) {
+                  liveWsRef.current.onclose = null; // suppress auto-reconnect handler
+                  liveWsRef.current.close(1000, 'Session reset');
+                  liveWsRef.current = null;
+                }
+                // Short pause so the old connection fully closes before opening a new one
+                setTimeout(async () => {
+                  try {
+                    await fetchToken();
+                    scheduleTokenRefresh();
+                    prevPromptTokensRef.current = 0;
+                    cumulativeAudioTokensRef.current = 0;
+                    sessionHandleRef.current = null; // force brand-new session, not a resumption
+                    _connectInternal({ isReconnect: false, resolve: null, reject: null });
+                  } catch (err) {
+                    console.error('Session reset reconnect failed:', err);
+                  }
+                }, 500);
+              }
+            }
+            : onNextQuestion;
+
           const toolResponses = processToolCalls(data, stateRef, {
             onFieldFilled,
             onFieldReset,
-            onNextQuestion,
+            onNextQuestion: onNextQuestionWithReset,
             onPrevQuestion,
             onGoToQuestion,
             setMessages,
@@ -162,6 +215,15 @@ export const useGeminiLive = ({ onFieldFilled, onFieldReset, onAudioReceived, fo
               total: prev.billedTokens.total + total,
             };
 
+            // Keep the ref in sync so disconnect() can read the final totals
+            sessionTokensRef.current = {
+              prompt: newBilled.prompt,
+              response: newBilled.response,
+              thoughts: (sessionTokensRef.current.thoughts || 0) + (newContext.thoughtsTokenCount || 0),
+              toolUse: (sessionTokensRef.current.toolUse || 0) + (newContext.toolUsePromptTokenCount || 0),
+              total: newBilled.total,
+            };
+
             const limits = tokenLimitsRef.current;
             const contextPercentage = limits.inputTokenLimit > 0
               ? Number(((total / limits.inputTokenLimit) * 100).toFixed(4))
@@ -179,6 +241,7 @@ export const useGeminiLive = ({ onFieldFilled, onFieldReset, onAudioReceived, fo
               "Thoughts Tokens": newContext.thoughtsTokenCount,
               "Total Tokens (This Turn)": newContext.totalTokenCount,
               "Context Limit": limits.inputTokenLimit,
+              "Cumulative Sent Audio Tokens (Est.)": Math.round(cumulativeAudioTokensRef.current),
             };
 
             console.table(tableData);
@@ -188,6 +251,28 @@ export const useGeminiLive = ({ onFieldFilled, onFieldReset, onAudioReceived, fo
             console.log("Cache Details:", newContext.cacheTokensDetails);
             console.log("Response Details:", newContext.responseTokensDetails);
             console.log("Tool Use Prompt Details:", newContext.toolUsePromptTokensDetails);
+
+            // Reset the cumulative audio token counter for the next turn
+            cumulativeAudioTokensRef.current = 0;
+
+            // Detect API-side context window compression:
+            // If promptTokenCount drops noticeably from the previous turn, the server
+            // silently trimmed the context. There's no dedicated event for this —
+            // a significant decrease is the only signal we get.
+            const prev_prompt = prevPromptTokensRef.current;
+            const curr_prompt = newContext.promptTokenCount;
+            if (prev_prompt > 0 && curr_prompt < prev_prompt) {
+              const dropped = prev_prompt - curr_prompt;
+              const dropPct = ((dropped / prev_prompt) * 100).toFixed(1);
+              if (dropped > 500) {
+                console.warn(
+                  `📉 Context window compression detected! ` +
+                  `Prompt tokens dropped from ${prev_prompt.toLocaleString()} → ${curr_prompt.toLocaleString()} ` +
+                  `(−${dropped.toLocaleString()} tokens, −${dropPct}%)`
+                );
+              }
+            }
+            prevPromptTokensRef.current = curr_prompt;
 
             return { contextSize: newContext, billedTokens: newBilled, limits, contextPercentage };
           });
@@ -220,7 +305,6 @@ export const useGeminiLive = ({ onFieldFilled, onFieldReset, onAudioReceived, fo
         return;
       }
 
-      // If Google rejected our old session ID, clear it so we can start fresh
       if (sessionHandleRef.current && (!isReconnect || reconnectAttemptRef.current === 0)) {
         console.warn("Session resumption failed (handle rejected). Clearing session and trying fresh.");
         sessionHandleRef.current = null;
@@ -295,6 +379,9 @@ export const useGeminiLive = ({ onFieldFilled, onFieldReset, onAudioReceived, fo
         // Reset our retry counters and tokens
         userDisconnectedRef.current = false;
         reconnectAttemptRef.current = 0;
+        cumulativeAudioTokensRef.current = 0;
+        questionsAnsweredRef.current = 0; // reset question counter for this session
+        sessionTokensRef.current = { prompt: 0, response: 0, thoughts: 0, toolUse: 0, total: 0 }; // reset session totals
         setTokenStats({
           contextSize: { prompt: 0, response: 0, total: 0 },
           billedTokens: { prompt: 0, response: 0, total: 0 },
@@ -318,8 +405,26 @@ export const useGeminiLive = ({ onFieldFilled, onFieldReset, onAudioReceived, fo
 
   // Stops everything. Called when the user clicks stop or leaves the page.
   const disconnect = useCallback(() => {
+    // Log cumulative token usage for the session that just ended
+    const s = sessionTokensRef.current;
+    if (s.total > 0) {
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('📋 SESSION ENDED — Total Token Usage Summary');
+      console.table({
+        'Prompt Tokens (cumulative)': s.prompt,
+        'Response Tokens (cumulative)': s.response,
+        'Thoughts Tokens (cumulative)': s.thoughts,
+        'Tool-Use Prompt Tokens (cumulative)': s.toolUse,
+        '── GRAND TOTAL ──': s.total,
+      });
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    }
+
     // Let the app know the user did this on purpose so it doesn't try to reconnect
     userDisconnectedRef.current = true;
+    // Clear the session handle so the next manual connect starts a brand-new session
+    // (resumption is only for unexpected drops, not intentional stops)
+    sessionHandleRef.current = null;
 
     // Stop any pending reconnection attempts
     if (reconnectTimerRef.current) {
@@ -352,6 +457,11 @@ export const useGeminiLive = ({ onFieldFilled, onFieldReset, onAudioReceived, fo
   const sendAudioChunk = useCallback((base64Pcm16) => {
     if (!isLiveReadyRef.current) return;
     if (!liveWsRef.current || liveWsRef.current.readyState !== WebSocket.OPEN) return;
+
+    // Calculate approximate tokens based on base64 chunk size
+    // 1 sec = 16kHz PCM = 32,000 bytes = ~42,666 base64 chars = 32 tokens
+    // Tokens = base64 chars * (32 / 42666) ≈ base64 chars * 0.00075
+    cumulativeAudioTokensRef.current += base64Pcm16.length * 0.00075;
 
     liveWsRef.current.send(JSON.stringify({
       realtimeInput: {

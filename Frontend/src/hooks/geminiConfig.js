@@ -20,6 +20,17 @@ export const VOICE_NAME = "Aoede";
 export const TEMPERATURE = 0.2;
 export const MAX_OUTPUT_TOKENS = 2048;
 
+// Context window compression — keeps long sessions alive without hitting the token limit.
+// The API starts compressing (dropping oldest turns) once the context reaches COMPRESSION_TRIGGER_TOKENS.
+// After compression, it retains only COMPRESSION_TARGET_TOKENS worth of history.
+// System instructions are always preserved regardless of compression.
+export const COMPRESSION_TRIGGER_TOKENS = 9000; // Start compressing at ~15k tokens
+export const COMPRESSION_TARGET_TOKENS = 6500;  // Keep ~8k tokens after compression
+
+// How many questions Gemini answers before we hard-reset the session for a clean context window.
+// Lower = fresher context, more reconnect overhead. Set to 0 to disable.
+export const SESSION_RESET_EVERY_N_QUESTIONS = 2;
+
 
 // Creates the full WebSocket URL using our token
 
@@ -55,12 +66,24 @@ export const buildSetupMessage = (systemPromptText, tools, { sessionHandle, isRe
         },
       },
       tools,
+      contextWindowCompression: {
+        triggerTokens: COMPRESSION_TRIGGER_TOKENS,
+        slidingWindow: {
+          targetTokens: COMPRESSION_TARGET_TOKENS,
+        },
+      },
+      realtimeInputConfig: {
+        automaticActivityDetection: {
+          startOfSpeechSensitivity: "START_SENSITIVITY_LOW",   // Don't trigger on tiny noises
+          endOfSpeechSensitivity: "END_SENSITIVITY_LOW",       // Wait longer before assuming user stopped
+          silenceDurationMs: 1000,    // 1 sec of silence before Gemini responds
+          prefixPaddingMs: 200,       // Capture 300ms before speech starts (prevents clipping)
+        }
+      }
     },
   };
 
-  // If we have an old session ID, tell Gemini to resume that conversation
   if (sessionHandle) {
-    // Tell the API we want to resume
     setupMessage.setup.sessionResumption = {
       sessionHandle: sessionHandle
     };

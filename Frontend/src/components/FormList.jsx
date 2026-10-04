@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { API_BASE_URL } from '../config';
 
 const FormList = () => {
   const [forms, setForms] = useState([]);
@@ -20,7 +21,7 @@ const FormList = () => {
   useEffect(() => {
     const fetchForms = async () => {
       try {
-        const response = await fetch('http://localhost:8044/api/forms');
+        const response = await fetch(`${API_BASE_URL}/api/forms`);
         if (!response.ok) {
           throw new Error('Failed to fetch question papers');
         }
@@ -33,7 +34,7 @@ const FormList = () => {
 
           let fields = null;
           try {
-            const fieldsRes = await fetch(`http://localhost:8044/api/fields/${currentForm.id}`);
+            const fieldsRes = await fetch(`${API_BASE_URL}/api/fields/${currentForm.id}`);
             fields = await fieldsRes.json();
 
             const savedData = localStorage.getItem(`formFields_${currentForm.id}`);

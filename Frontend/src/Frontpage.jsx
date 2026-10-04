@@ -11,6 +11,7 @@ import { useFormFields } from './hooks/useFormFields';
 import { useQuestionNavigation } from './hooks/useQuestionNavigation';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
+import { API_BASE_URL } from './config';
 
 
 const VoiceAssistantUI = () => {
@@ -90,7 +91,7 @@ const VoiceAssistantUI = () => {
 
   const handleDownload = async () => {
     try {
-      const response = await axios.post(`http://localhost:8044/api/download/${formid}`, {
+      const response = await axios.post(`${API_BASE_URL}/api/download/${formid}`, {
         formFields
       }, {
         responseType: 'blob'

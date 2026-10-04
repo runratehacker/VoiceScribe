@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../config';
 
 // Settings and constants for the Gemini Live connection
 
@@ -6,7 +7,7 @@
 export const GEMINI_MODEL = "models/gemini-3.1-flash-live-preview";
 
 // Where we get our temporary access tokens
-export const getTokenApiUrl = (model) => `http://localhost:8044/api/live/token?model=${encodeURIComponent(model)}`;
+export const getTokenApiUrl = (model) => `${API_BASE_URL}/api/live/token?model=${encodeURIComponent(model)}`;
 
 // How many times and how fast to retry if the connection drops
 export const MAX_RECONNECT_RETRIES = 3;

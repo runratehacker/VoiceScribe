@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { API_BASE_URL } from '../config';
 
 export const useForm = () => {
 
@@ -10,7 +11,7 @@ export const useForm = () => {
 
    const getForms = async () => {
         try {
-            const response = await axios.get('http://localhost:8044/api/forms');
+            const response = await axios.get(`${API_BASE_URL}/api/forms`);
             setForms(response.data);
         } catch (error) {
             console.log(error.message);

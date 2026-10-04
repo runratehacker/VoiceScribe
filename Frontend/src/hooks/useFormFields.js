@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useParams } from 'react-router-dom';
+import { API_BASE_URL } from '../config';
 
 export const useFormFields = (formid) => {
   // intilized formFields as an empty object
@@ -13,7 +14,7 @@ export const useFormFields = (formid) => {
   const getFields = async () => {
     try {      
       // Always fetch from backend to get the latest schema
-      const response = await axios.get(`http://localhost:8044/api/fields/${formid}`);
+      const response = await axios.get(`${API_BASE_URL}/api/fields/${formid}`);
       let newFields = response.data;
 
       // Check if we have saved data in localStorage to merge answers

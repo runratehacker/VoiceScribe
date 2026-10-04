@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { API_BASE_URL } from '../config';
 
 const TeacherDashboard = () => {
   const [file, setFile] = useState(null);
@@ -16,7 +17,7 @@ const TeacherDashboard = () => {
   useEffect(() => {
     const fetchPapers = async () => {
       try {
-        const response = await fetch('http://localhost:8044/api/uploaded-papers');
+        const response = await fetch(`${API_BASE_URL}/api/uploaded-papers`);
         if (response.ok) {
           const data = await response.json();
           setUploadedPapers(data);
@@ -60,7 +61,7 @@ const TeacherDashboard = () => {
     formData.append('assignedTo', assignedTo);
 
     try {
-      const response = await fetch('http://localhost:8044/api/upload', {
+      const response = await fetch(`${API_BASE_URL}/api/upload`, {
         method: 'POST',
         body: formData,
       });
@@ -184,7 +185,7 @@ const TeacherDashboard = () => {
 
                       <div className="flex items-center gap-2">
                         <a
-                          href={`http://localhost:8044${paper.path}`}
+                          href={`${API_BASE_URL}${paper.path}`}
                           download
                           target="_blank"
                           rel="noopener noreferrer"

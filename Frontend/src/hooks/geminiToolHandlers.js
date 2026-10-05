@@ -133,12 +133,32 @@ export const processToolCalls = (functionCalls, stateRef, callbacks) => {
       }
 
       // Get the very latest answer so we don't accidentally overwrite anything
+      const isMcq = found.field.type === 'objective' || (found.field.options && found.field.options.length > 0);
+      let effectiveOverwrite = overwrite;
+      let effectiveValue = value;
+
+      if (isMcq) {
+        // Enforce single option selection for MCQs: always overwrite, never append
+        effectiveOverwrite = true;
+        const trimmed = String(value).trim();
+        if (found.field.options && Array.isArray(found.field.options)) {
+          const match = found.field.options.find(opt => 
+            opt.label.toLowerCase() === trimmed.toLowerCase() ||
+            trimmed.toLowerCase().startsWith(opt.label.toLowerCase() + '.') ||
+            trimmed.toLowerCase().startsWith(opt.label.toLowerCase() + ')') ||
+            trimmed.toLowerCase() === `option ${opt.label.toLowerCase()}`
+          );
+          if (match) {
+            effectiveValue = match.label;
+          }
+        }
+      }
 
       const existingValue = found.field.value || "";
-      const finalValue = overwrite ? value : (existingValue ? `${existingValue} ${value}` : value);
+      const finalValue = effectiveOverwrite ? effectiveValue : (existingValue ? `${existingValue} ${effectiveValue}` : effectiveValue);
 
       if (typeof onFieldFilled === "function") {
-        onFieldFilled(found.key, value, overwrite); // Pass the exact key so we update the right one
+        onFieldFilled(found.key, effectiveValue, effectiveOverwrite); // Pass the exact key so we update the right one
       }
 
       setMessages((prev) => [

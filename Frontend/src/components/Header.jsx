@@ -26,7 +26,7 @@ const Header = ({ progressTotal = 0, progressCompleted = 0, progressPending = 0 
 
       {/* Embedded Progress Widget */}
       {progressTotal > 0 && (
-        <div className="flex-1 bg-white rounded-[2rem] px-8 py-4 shadow-sm border border-slate-200 flex justify-between items-start max-w-3xl">
+        <div className="flex-1 bg-white rounded-4xl px-8 py-4 shadow-sm border border-slate-200 flex justify-between items-start max-w-3xl">
           <div className="w-1/3 border-r border-slate-200 pr-6">
             <div className="flex justify-between items-end mb-1">
               <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total</p>

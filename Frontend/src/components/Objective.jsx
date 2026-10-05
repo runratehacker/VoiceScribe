@@ -1,7 +1,7 @@
 import React from 'react';
 import LatexRenderer from './LatexRenderer';
 
-const Objective = ({ fieldKey, label, heading, question, value, filled, totalQuestions, onPrev, onNext, hasPrev, hasNext, options = [] }) => {
+const Objective = ({ fieldKey, label, heading, question, value, filled, totalQuestions, onPrev, onNext, hasPrev, hasNext, options = [], onSelectOption }) => {
   return (
     <main className="flex-1 w-full mx-auto flex flex-col mb-4 min-h-0">
       <div className="flex-1 bg-[#FDFDFD] rounded-4xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-200 flex flex-col p-6 md:p-8 relative overflow-hidden gap-6">
@@ -52,10 +52,21 @@ const Objective = ({ fieldKey, label, heading, question, value, filled, totalQue
         {/* Answer Block (Options) */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 w-full overflow-y-auto pb-2" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
           {options.map((option, index) => {
-            const isSelected = value && value.toString().toLowerCase().includes(option.label.toLowerCase());
+            const trimmedValue = value ? String(value).trim().toUpperCase() : "";
+            const optionLabelUpper = option.label ? String(option.label).trim().toUpperCase() : "";
+            const isSelected = trimmedValue && (
+              trimmedValue === optionLabelUpper ||
+              trimmedValue.startsWith(optionLabelUpper + '.') ||
+              trimmedValue.startsWith(optionLabelUpper + ')') ||
+              trimmedValue === `OPTION ${optionLabelUpper}`
+            );
             if (isSelected) {
               return (
-                <div key={index} className="flex items-center gap-4 p-4 pr-3 rounded-full border border-[#333] bg-[#1A1A1A] transition-colors cursor-pointer shrink-0 shadow-md">
+                <div 
+                  key={index} 
+                  onClick={() => onSelectOption && onSelectOption(option.label)}
+                  className="flex items-center gap-4 p-4 pr-3 rounded-full border border-[#333] bg-[#1A1A1A] transition-colors cursor-pointer shrink-0 shadow-md"
+                >
                   <div className="w-10 h-10 rounded-full border border-white/40 text-white flex items-center justify-center font-bold text-base shrink-0">
                     {option.label}
                   </div>
@@ -69,7 +80,11 @@ const Objective = ({ fieldKey, label, heading, question, value, filled, totalQue
               );
             }
             return (
-              <div key={index} className="flex items-center gap-4 p-4 pr-6 rounded-full border border-slate-200 bg-white hover:bg-slate-50 transition-colors cursor-pointer group shrink-0 shadow-sm">
+              <div 
+                key={index} 
+                onClick={() => onSelectOption && onSelectOption(option.label)}
+                className="flex items-center gap-4 p-4 pr-6 rounded-full border border-slate-200 bg-white hover:bg-slate-50 transition-colors cursor-pointer group shrink-0 shadow-sm"
+              >
                 <div className="w-10 h-10 rounded-full border border-slate-300 text-slate-500 flex items-center justify-center font-bold text-base group-hover:border-slate-400 shrink-0">
                   {option.label}
                 </div>

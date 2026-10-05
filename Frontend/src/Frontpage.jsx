@@ -199,6 +199,7 @@ const VoiceAssistantUI = () => {
           onNext={handleNext}
           hasPrev={currentQuestionIndex > 0}
           hasNext={currentQuestionIndex < totalQuestions}
+          onSelectOption={(optionLabel) => onFieldFilled(currentKey, optionLabel, true)}
         />
       )}
 

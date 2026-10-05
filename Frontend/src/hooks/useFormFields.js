@@ -87,6 +87,22 @@ export const useFormFields = (formid) => {
               next[key] = { ...next[key], filled: false };
             }
           }
+          else if (next[key].type === 'objective' || (next[key].options && next[key].options.length > 0)) {
+            // Single option maximum for MCQ: always overwrite and extract single option
+            let selectedOption = String(value).trim();
+            if (next[key].options && Array.isArray(next[key].options)) {
+              const match = next[key].options.find(opt => 
+                opt.label.toLowerCase() === selectedOption.toLowerCase() ||
+                selectedOption.toLowerCase().startsWith(opt.label.toLowerCase() + '.') ||
+                selectedOption.toLowerCase().startsWith(opt.label.toLowerCase() + ')') ||
+                selectedOption.toLowerCase() === `option ${opt.label.toLowerCase()}`
+              );
+              if (match) {
+                selectedOption = match.label;
+              }
+            }
+            next[key] = { ...next[key], filled: selectedOption.length > 0, value: selectedOption };
+          }
           else {
             // Append new value to existing value unless overwrite is true
             const existingValue = overwrite ? "" : (next[key].value || "");

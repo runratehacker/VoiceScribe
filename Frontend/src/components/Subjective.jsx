@@ -103,7 +103,7 @@ const Subjective = ({ fieldKey, label, heading, question, value, filled, totalQu
           >
             {value ? (
               <div className="w-full flex-1">
-                <div className="text-slate-800 text-base md:text-lg leading-relaxed break-words whitespace-pre-wrap text-left">
+                <div className="text-slate-800 text-base md:text-lg leading-relaxed wrap-break-word whitespace-pre-wrap text-left">
                   <LatexRenderer text={value} />
                   <span className="inline-block w-0.5 h-5 bg-blue-500 ml-1 animate-pulse align-text-bottom" />
                 </div>

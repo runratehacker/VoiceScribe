@@ -46,7 +46,7 @@ const VoiceFooter = ({ isRecording, toggleMicrophone }) => {
       {/* MIC BUTTON PILL */}
       <button
         onClick={toggleMicrophone}
-        className="w-full md:w-[320px] lg:w-[360px] flex items-center justify-between p-2 pr-4 bg-white/40 border border-slate-200/80 rounded-[3rem] shadow-sm backdrop-blur-md hover:bg-white/60 transition-all active:scale-[0.98] group shrink-0"
+        className="w-full md:w-[320px] lg:w-90 flex items-center justify-between p-2 pr-4 bg-white/40 border border-slate-200/80 rounded-[3rem] shadow-sm backdrop-blur-md hover:bg-white/60 transition-all active:scale-[0.98] group shrink-0"
       >
         <div className={`w-14 h-14 rounded-full flex items-center justify-center shrink-0 overflow-hidden transition-colors ${isRecording ? 'bg-[#FFF0E6] text-[#E05C3A]' : 'bg-slate-200 text-slate-500'}`}>
           <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">

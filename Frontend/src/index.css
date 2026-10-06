@@ -1,5 +1,54 @@
+@import url('https://fonts.googleapis.com/css2?family=Comic+Relief:wght@400;700&display=swap');
 @import "tailwindcss";
 
-*{
-  font-family: cursive;
+@theme {
+  --font-sans: 'Comic Relief', 'Comic Sans MS', cursive, sans-serif;
+}
+
+:root {
+  font-family: 'Comic Relief', 'Comic Sans MS', cursive, sans-serif;
+  font-weight: 700;
+}
+
+body {
+  font-family: 'Comic Relief', 'Comic Sans MS', cursive, sans-serif;
+  font-weight: 700;
+  margin: 0;
+  -webkit-font-smoothing: auto;
+  -moz-osx-font-smoothing: auto;
+}
+
+/* Make KaTeX math formulas bold */
+.katex,
+.katex .katex-html {
+  font-weight: 700 !important;
+}
+
+.katex .base,
+.katex .mord,
+.katex .mbin,
+.katex .mrel,
+.katex .mop,
+.katex .minner,
+.katex .mopen,
+.katex .mclose,
+.katex .mpunct,
+.katex .mathnormal {
+  font-weight: 300 !important;
+  -webkit-text-stroke: 0.40px currentColor;
+}
+
+svg,
+svg *,
+.katex svg,
+.katex svg * {
+  -webkit-text-stroke: 0 !important;
+}
+
+input,
+button,
+select,
+textarea {
+  font-family: inherit;
+  font-weight: inherit;
 }

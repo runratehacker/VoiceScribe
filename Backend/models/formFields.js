@@ -105,7 +105,7 @@ const scienceFormFields = {
     type: "objective",
     label: "1",
     question: "Ravi wants to load a heavy box into a truck. Instead of lifting it straight up, he uses a ramp. Why does using the ramp makes his work easier?",
-    heading: "I. MULTIPLE CHOICE QUESTIONS (1X10=10 M)",
+    heading: "I. MULTIPLE CHOICE QUESTIONS",
     options: [
       { label: "A", text: "It increases the weight of the box." },
       { label: "B", text: "It reduces the distance moved." },
@@ -119,7 +119,7 @@ const scienceFormFields = {
     type: "objective",
     label: "2",
     question: "A student pulls a rope to hoist a flag upward using a wheel and rope system. Which simple machine is used?",
-    heading: "I. MULTIPLE CHOICE QUESTIONS (1X10=10 M)",
+    heading: "I. MULTIPLE CHOICE QUESTIONS",
     options: [
       { label: "A", text: "Pulley" },
       { label: "B", text: "wedge" },
@@ -133,7 +133,7 @@ const scienceFormFields = {
     type: "objective",
     label: "3",
     question: "The force responsible for the paper pieces moving towards the plastic comb after rubbing on the head is called ________________",
-    heading: "I. MULTIPLE CHOICE QUESTIONS (1X10=10 M)",
+    heading: "I. MULTIPLE CHOICE QUESTIONS",
     options: [
       { label: "A", text: "magnetic force" },
       { label: "B", text: "frictional force" },
@@ -147,7 +147,7 @@ const scienceFormFields = {
     type: "objective",
     label: "4",
     question: "Which of the following is NOT an example of energy transformation?",
-    heading: "I. MULTIPLE CHOICE QUESTIONS (1X10=10 M)",
+    heading: "I. MULTIPLE CHOICE QUESTIONS",
     options: [
       { label: "A", text: "Speaking" },
       { label: "B", text: "Television" },
@@ -161,7 +161,7 @@ const scienceFormFields = {
     type: "objective",
     label: "5",
     question: "An empty farm near a village is used for dumping garbage. After a few months, the area smells bad, plants stop growing and animals often fall sick. This is caused due to ____________",
-    heading: "I. MULTIPLE CHOICE QUESTIONS (1X10=10 M)",
+    heading: "I. MULTIPLE CHOICE QUESTIONS",
     options: [
       { label: "A", text: "Noise pollution" },
       { label: "B", text: "Air pollution" },
@@ -175,7 +175,7 @@ const scienceFormFields = {
     type: "objective",
     label: "6",
     question: "Animal dung, especially that of cattle such as cows and buffaloes is used to produce a fuel called ______________",
-    heading: "I. MULTIPLE CHOICE QUESTIONS (1X10=10 M)",
+    heading: "I. MULTIPLE CHOICE QUESTIONS",
     options: [
       { label: "A", text: "petroleum" },
       { label: "B", text: "biogas" },
@@ -189,7 +189,7 @@ const scienceFormFields = {
     type: "objective",
     label: "7",
     question: "Even when a person is sleeping or resting, the heart continues to beat and pump blood throughout the body without stopping. This action is carried out by ______________",
-    heading: "I. MULTIPLE CHOICE QUESTIONS (1X10=10 M)",
+    heading: "I. MULTIPLE CHOICE QUESTIONS",
     options: [
       { label: "A", text: "voluntary muscles" },
       { label: "B", text: "skeletal muscles" },
@@ -203,7 +203,7 @@ const scienceFormFields = {
     type: "objective",
     label: "8",
     question: "While playing, Tina rotates her arm in a circle at the shoulder and bends her elbow to throw a ball. Which joint is present in the shoulder?",
-    heading: "I. MULTIPLE CHOICE QUESTIONS (1X10=10 M)",
+    heading: "I. MULTIPLE CHOICE QUESTIONS",
     options: [
       { label: "A", text: "Hinge joint" },
       { label: "B", text: "Ball and socket joint" },
@@ -217,7 +217,7 @@ const scienceFormFields = {
     type: "objective",
     label: "9",
     question: "Ravi accidentally touches a hot vessel. His hand is pulled back immediately before he feels the pain and only after a moment does he realize what happened. This shows that the response was first controlled by the _________.",
-    heading: "I. MULTIPLE CHOICE QUESTIONS (1X10=10 M)",
+    heading: "I. MULTIPLE CHOICE QUESTIONS",
     options: [
       { label: "A", text: "brain only" },
       { label: "B", text: "heart" },
@@ -231,7 +231,7 @@ const scienceFormFields = {
     type: "objective",
     label: "10",
     question: "Involuntary actions such as breathing, heartbeat, digestion are controlled by the ________.",
-    heading: "I. MULTIPLE CHOICE QUESTIONS (1X10=10 M)",
+    heading: "I. MULTIPLE CHOICE QUESTIONS",
     options: [
       { label: "A", text: "cerebrum" },
       { label: "B", text: "cerebellum" },
@@ -247,7 +247,7 @@ const scienceFormFields = {
     type: "subjective",
     label: "II.1",
     question: "Name the following: The substance that causes pollution.",
-    heading: "II. NAME THE FOLLOWING (1X4=4M)",
+    heading: "II. NAME THE FOLLOWING",
     filled: false,
     value: ""
   },
@@ -255,7 +255,7 @@ const scienceFormFields = {
     type: "subjective",
     label: "II.2",
     question: "Name the following: The fixed point around which a lever turns.",
-    heading: "II. NAME THE FOLLOWING (1X4=4M)",
+    heading: "II. NAME THE FOLLOWING",
     filled: false,
     value: ""
   },
@@ -263,7 +263,7 @@ const scienceFormFields = {
     type: "subjective",
     label: "II.3",
     question: "Name the following: A push or pull that makes an object move.",
-    heading: "II. NAME THE FOLLOWING (1X4=4M)",
+    heading: "II. NAME THE FOLLOWING",
     filled: false,
     value: ""
   },
@@ -271,7 +271,7 @@ const scienceFormFields = {
     type: "subjective",
     label: "II.4",
     question: "Name the following: Strong bands of tissues that attach one bone to another.",
-    heading: "II. NAME THE FOLLOWING (1X4=4M)",
+    heading: "II. NAME THE FOLLOWING",
     filled: false,
     value: ""
   },
@@ -281,7 +281,7 @@ const scienceFormFields = {
     type: "subjective",
     label: "III.1",
     question: "Give the difference between biodegradable waste and non-biodegradable waste along with an example.",
-    heading: "III. ANSWER THE FOLLOWING (2X5=10M)",
+    heading: "III. ANSWER THE FOLLOWING",
     filled: false,
     value: ""
   },
@@ -289,7 +289,7 @@ const scienceFormFields = {
     type: "subjective",
     label: "III.2",
     question: "Why is a screw better than a nail?",
-    heading: "III. ANSWER THE FOLLOWING (2X5=10M)",
+    heading: "III. ANSWER THE FOLLOWING",
     filled: false,
     value: ""
   },
@@ -297,7 +297,7 @@ const scienceFormFields = {
     type: "subjective",
     label: "III.3",
     question: "What are the different functions of the skeletal system?",
-    heading: "III. ANSWER THE FOLLOWING (2X5=10M)",
+    heading: "III. ANSWER THE FOLLOWING",
     filled: false,
     value: ""
   },
@@ -305,7 +305,7 @@ const scienceFormFields = {
     type: "subjective",
     label: "III.4",
     question: "With the help of a mind map mention any two types of simple machines with their advantage.",
-    heading: "III. ANSWER THE FOLLOWING (2X5=10M)",
+    heading: "III. ANSWER THE FOLLOWING",
     filled: false,
     value: ""
   },
@@ -313,7 +313,7 @@ const scienceFormFields = {
     type: "subjective",
     label: "III.5",
     question: "How many pairs of ribs are present in the human body? To which bones the ribs are attached at the front and the back? Why are the last two pairs of ribs called as floating ribs?",
-    heading: "III. ANSWER THE FOLLOWING (2X5=10M)",
+    heading: "III. ANSWER THE FOLLOWING",
     filled: false,
     value: ""
   },

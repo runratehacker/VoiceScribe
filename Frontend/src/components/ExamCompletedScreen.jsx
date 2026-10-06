@@ -37,13 +37,15 @@ const ExamCompletedScreen = ({ onPrev, onDownload }) => {
         {/* Main Content Centered */}
         <div className="flex-1 flex flex-col items-center py-4">
           <div className="my-auto flex flex-col items-center gap-6 w-full">
+
             <div className="bg-green-50 p-5 md:p-6 rounded-full border border-green-100">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 md:h-16 md:w-16 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 md:h-16 md:w-16 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
+
             <h2 className="text-2xl md:text-3xl font-extrabold text-slate-800 text-center">Exam Completed!</h2>
-            <p className="text-slate-500 text-center text-base md:text-lg max-w-md px-4">
+            <p className="text-slate-500 text-center text-base md:text-xl max-w-4xl px-8">
               You have successfully answered all questions. You can now download your filled question paper or go back to review your answers.
             </p>
             <div className="flex flex-wrap justify-center gap-3 md:gap-4 mt-2">

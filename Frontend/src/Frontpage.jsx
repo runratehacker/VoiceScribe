@@ -15,10 +15,6 @@ import { API_BASE_URL } from './config';
 
 
 const VoiceAssistantUI = () => {
-  // const [isMicActive, setIsMicActive] = useState(false);
-
-  // Should get onFieldFilled and formFields from useGeminiForm
-  // TODO: Add useGeminiForm hook here
   const { formid } = useParams();
   const { formFields, onFieldFilled, onFieldReset } = useFormFields(formid);
 
@@ -41,7 +37,6 @@ const VoiceAssistantUI = () => {
     isCompleted
   } = useQuestionNavigation(formFields);
 
-  // Copied part 
   const messagesEndRef = useRef(null);
   const { enqueueAudio, stopPlayback } = useAudioPlayback();
 
@@ -74,8 +69,7 @@ const VoiceAssistantUI = () => {
     if (isCompleted && !completionMessageSentRef.current && wsState === "ready") {
       completionMessageSentRef.current = true;
       sendCompletionMessage();
-      
-      // End the websocket connection after giving Gemini enough time to say goodbye.
+
       const timer = setTimeout(() => {
         if (isRecording) {
           isIntentionalDisconnectRef.current = true;
@@ -83,7 +77,7 @@ const VoiceAssistantUI = () => {
           disconnect();
           stopPlayback();
         }
-      }, 10000); // 10 seconds should be enough for a brief goodbye
+      }, 10000);
 
       return () => clearTimeout(timer);
     }
@@ -116,7 +110,7 @@ const VoiceAssistantUI = () => {
   // Auto-connect on page load
   useEffect(() => {
     const hasQuestionsLoaded = formFields && Object.keys(formFields).length > 0;
-    
+
     if (hasQuestionsLoaded && !hasAutoConnected.current) {
       hasAutoConnected.current = true;
       const initVoice = async () => {
@@ -131,11 +125,8 @@ const VoiceAssistantUI = () => {
     }
   }, [connect, startRecording, formFields]);
 
-  // Handle reconnection states — the hook now auto-reconnects internally
-  // This effect only handles the final failure case or intentional disconnect
   useEffect(() => {
     if (wsState === 'error' && isRecording) {
-      // Hook exhausted all retries — stop recording so user can re-click mic
       console.log("Reconnection failed after all retries. Stopping recording.");
       stopRecording();
       stopPlayback();
@@ -150,10 +141,9 @@ const VoiceAssistantUI = () => {
     }
   }, [wsState, isRecording, stopRecording, stopPlayback]);
 
-  // When the user clicks on the Mic button
   const toggleMicrophone = async () => {
     if (isRecording) {
-      isIntentionalDisconnectRef.current = true; // Mark as intentional
+      isIntentionalDisconnectRef.current = true;
       stopRecording();
       disconnect();
       stopPlayback();
@@ -169,68 +159,119 @@ const VoiceAssistantUI = () => {
   };
 
   return (
-    <div className="h-screen w-full overflow-hidden bg-[#F3F4F8] p-4 md:p-6 flex flex-col font-sans text-slate-800">
+    <div className="min-h-dvh w-full bg-[#f5f5f5] text-[#292524] p-4 sm:p-6 flex flex-col justify-between font-sans relative overflow-x-hidden selection:bg-[#292524] selection:text-white">
 
-      <Header 
-        progressTotal={progressTotal} 
-        progressCompleted={progressCompleted} 
-        progressPending={progressPending} 
-      />
-
-      {/* Render only the CURRENT question */}
-      {!isCompleted && !currentField && (
-        <div className="flex-1 bg-[#FDFDFD] rounded-4xl shadow-sm border border-slate-200 flex flex-col p-6 md:p-8 items-center justify-center mb-4 min-h-30">
-          <p className="text-slate-500 font-medium">Loading questions or form not found...</p>
-        </div>
-      )}
-
-      {!isCompleted && currentField && currentField.type === "objective" && (
-        <Objective
-          key={currentKey}
-          fieldKey={questionNumber}
-          label={currentField.label}
-          heading={currentHeading}
-          question={currentField.question}
-          value={currentField.value}
-          filled={currentField.filled}
-          options={currentField.options}
-          totalQuestions={totalQuestions}
-          onPrev={handlePrev}
-          onNext={handleNext}
-          hasPrev={currentQuestionIndex > 0}
-          hasNext={currentQuestionIndex < totalQuestions}
-          onSelectOption={(optionLabel) => onFieldFilled(currentKey, optionLabel, true)}
+      {/* Atmospheric Pastel Gradient Orbs (ElevenLabs signature) */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
+        <div
+          className="absolute -top-28 right-1/4 w-145 h-145 rounded-full opacity-30 blur-3xl"
+          style={{
+            background: 'radial-gradient(circle at center, #c8b8e0 0%, #a8c8e8 45%, transparent 75%)'
+          }}
         />
-      )}
-
-      {!isCompleted && currentField && (currentField.type === "subjective" || currentField.type === "text") && (
-        <Subjective 
-          key={currentKey} 
-          fieldKey={questionNumber} 
-          label={currentField.label} 
-          heading={currentHeading}
-          question={currentField.question}
-          value={currentField.value} 
-          filled={currentField.filled} 
-          totalQuestions={totalQuestions}
-          onPrev={handlePrev}
-          onNext={handleNext}
-          hasPrev={currentQuestionIndex > 0}
-          hasNext={currentQuestionIndex < totalQuestions}
+        <div
+          className="absolute bottom-10 -left-24 w-130 h-130 rounded-full opacity-25 blur-3xl"
+          style={{
+            background: 'radial-gradient(circle at center, #f4c5a8 0%, #a7e5d3 45%, transparent 75%)'
+          }}
         />
-      )}
+      </div>
 
-      {/* {!isCompleted && currentField && currentField.type !== "objective" && currentField.type !== "subjective" && currentField.type !== "text" && (
-        <div className="flex-1 bg-[#FDFDFD] rounded-4xl shadow-sm border border-slate-200 flex flex-col p-6 md:p-8 items-center justify-center mb-4 min-h-30">
-          <p className="text-red-500 font-medium">Error: Unsupported question type '{currentField.type}'</p>
-        </div>
-      )} */}
+      <div className="w-full max-w-6xl mx-auto flex-1 flex flex-col min-h-0 relative z-10">
+        <Header
+          progressTotal={progressTotal}
+          progressCompleted={progressCompleted}
+          progressPending={progressPending}
+          currentQuestionIndex={currentQuestionIndex}
+          onGoToQuestion={handleGoToQuestion}
+        />
 
-      {isCompleted && (
-        <ExamCompletedScreen onPrev={handlePrev} onDownload={handleDownload} />
-      )}
+        {/* Skeletal Loaders Matching Question Studio Split Layout */}
+        {!isCompleted && !currentField && (
+          <div className="flex-1 w-full mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 mb-4 min-h-0 items-stretch animate-pulse">
+            <div className="lg:col-span-7 bg-white rounded-2xl border border-[#e7e5e4] p-8 sm:p-10 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between pb-6 border-b border-[#f0efed] mb-8">
+                  <div className="h-6 w-36 bg-[#f0efed] rounded-full" />
+                  <div className="h-6 w-20 bg-[#f0efed] rounded-full" />
+                </div>
+                <div className="h-4 w-28 bg-[#f0efed] rounded-md mb-4" />
+                <div className="space-y-3">
+                  <div className="h-8 w-5/6 bg-[#f0efed] rounded-lg" />
+                  <div className="h-8 w-2/3 bg-[#f0efed] rounded-lg" />
+                </div>
+              </div>
+              <div className="pt-5 border-t border-[#f0efed] flex justify-between">
+                <div className="h-4 w-48 bg-[#f0efed] rounded-md" />
+                <div className="h-4 w-24 bg-[#f0efed] rounded-md" />
+              </div>
+            </div>
+            <div className="lg:col-span-5 bg-white rounded-2xl border border-[#e7e5e4] p-6 sm:p-8 flex flex-col justify-between gap-4">
+              <div className="h-6 w-32 bg-[#f0efed] rounded-md mb-2" />
+              <div className="flex-1 flex flex-col gap-3">
+                {[0, 1, 2, 3].map((item) => (
+                  <div key={item} className="h-14 w-full bg-[#fafafa] border border-[#e7e5e4] rounded-xl" />
+                ))}
+              </div>
+              <div className="h-4 w-full bg-[#f0efed] rounded-md" />
+            </div>
+          </div>
+        )}
 
-      <VoiceFooter isRecording={isRecording} toggleMicrophone={toggleMicrophone} />
+        {!isCompleted && currentField && currentField.type === "objective" && (
+          <Objective
+            key={currentKey}
+            fieldKey={questionNumber}
+            label={currentField.label}
+            heading={currentHeading}
+            question={currentField.question}
+            value={currentField.value}
+            filled={currentField.filled}
+            options={currentField.options}
+            totalQuestions={totalQuestions}
+            onPrev={handlePrev}
+            onNext={handleNext}
+            hasPrev={currentQuestionIndex > 0}
+            hasNext={currentQuestionIndex < totalQuestions}
+            onSelectOption={(optionLabel) => onFieldFilled(currentKey, optionLabel, true)}
+          />
+        )}
+
+        {!isCompleted && currentField && (currentField.type === "subjective" || currentField.type === "text") && (
+          <Subjective
+            key={currentKey}
+            fieldKey={questionNumber}
+            label={currentField.label}
+            heading={currentHeading}
+            question={currentField.question}
+            value={currentField.value}
+            filled={currentField.filled}
+            totalQuestions={totalQuestions}
+            onPrev={handlePrev}
+            onNext={handleNext}
+            hasPrev={currentQuestionIndex > 0}
+            hasNext={currentQuestionIndex < totalQuestions}
+          />
+        )}
+
+        {isCompleted && (
+          <ExamCompletedScreen
+            onPrev={handlePrev}
+            onDownload={handleDownload}
+            progressTotal={progressTotal}
+            progressCompleted={progressCompleted}
+          />
+        )}
+
+        <VoiceFooter
+          isRecording={isRecording}
+          toggleMicrophone={toggleMicrophone}
+          onPrev={!isCompleted ? handlePrev : null}
+          onNext={!isCompleted ? handleNext : null}
+          hasPrev={currentQuestionIndex > 0}
+          hasNext={currentQuestionIndex < totalQuestions - 1}
+        />
+      </div>
     </div>
   );
 };

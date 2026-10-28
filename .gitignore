@@ -66,3 +66,8 @@ Thumbs.db
 
 # Ignore files containing secrets
 LoopHole.md
+
+# Design reference docs
+DESIGN.md
+elevenlabs-DESIGN.md
+taste-SKILL.md

@@ -1,83 +1,110 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-const Header = ({ progressTotal = 0, progressCompleted = 0, progressPending = 0 }) => {
+const Header = ({
+  progressTotal = 0,
+  progressCompleted = 0,
+  progressPending = 0,
+  currentQuestionIndex = 0,
+  onGoToQuestion
+}) => {
   const navigate = useNavigate();
+  const [showExitModal, setShowExitModal] = useState(false);
 
-  const handleSave = () => {
-    alert("Progress is automatically saved as you go!");
-  };
-
-  const handleExit = () => {
+  const handleExitConfirm = () => {
     navigate('/fillform');
   };
 
-  return (
-    <header className="flex justify-between items-start mb-4 w-full max-w-6xl mx-auto shrink-0 gap-4">
-      <button
-        onClick={handleExit}
-        className="flex items-center justify-center w-10 h-10 bg-white border border-slate-200 rounded-full shadow-sm hover:bg-slate-50 transition-colors text-slate-600 shrink-0 mt-2"
-        title="Go Back"
-      >
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-        </svg>
-      </button>
+  const percentage = progressTotal > 0 ? Math.round((progressCompleted / progressTotal) * 100) : 0;
 
-      {/* Embedded Progress Widget */}
-      {progressTotal > 0 && (
-        <div className="flex-1 bg-white rounded-4xl px-8 py-4 shadow-sm border border-slate-200 flex justify-between items-start max-w-3xl">
-          <div className="w-1/3 border-r border-slate-200 pr-6">
-            <div className="flex justify-between items-end mb-1">
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total</p>
-              <h4 className="text-lg font-bold leading-none text-slate-800">{progressTotal}</h4>
-            </div>
-            <div className="flex flex-wrap gap-1 mt-2">
-              {[...Array(progressTotal)].map((_, i) => (
-                <div key={i} className="w-1 h-3 bg-slate-200 rounded-full"></div>
-              ))}
-            </div>
+  return (
+    <>
+      <header className="w-full bg-white/90 backdrop-blur-md rounded-[22px] border border-[#e7e5e4] shadow-[0_4px_20px_rgba(0,0,0,0.03)] px-5 sm:px-6 py-3 mb-5 shrink-0 flex items-center justify-between gap-4 transition-all">
+        {/* Left: Brand Monogram & Examination Mode */}
+        <div className="flex items-center gap-3.5 shrink-0">
+          <div className="flex items-center gap-1.5 h-4.5 px-0.5" aria-hidden="true">
+            <span className="w-0.5 h-3.5 bg-[#292524] rounded-full" />
+            <span className="w-0.5 h-5 bg-[#292524] rounded-full" />
+            <span className="w-0.5 h-2.5 bg-[#292524] rounded-full" />
           </div>
-          <div className="w-1/3 border-r border-slate-200 pl-6 pr-6">
-            <div className="flex justify-between items-end mb-1">
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Completed</p>
-              <h4 className="text-lg font-bold leading-none text-[#1E293B]">{progressCompleted}</h4>
+          <span className="text-[15px] font-semibold tracking-[0.2em] text-[#0c0a09] uppercase select-none">
+            VOICESCRIBE
+          </span>
+          <span className="hidden sm:inline-block w-px h-4 bg-[#e7e5e4]" aria-hidden="true" />
+          <span className="hidden sm:inline-flex items-center gap-1.5 text-[11px] font-semibold tracking-[0.08em] uppercase px-2.5 py-0.5 rounded-full bg-[#f0efed] text-[#0c0a09]">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#0c0a09]" />
+            EXAM SESSION
+          </span>
+        </div>
+
+        {/* Center: Live Evaluation Progress Pill (Middle-dot rationed, no background bar track) */}
+        {progressTotal > 0 && (
+          <div className="hidden md:flex items-center gap-3.5 px-4 py-1.5 bg-[#fafafa] rounded-full border border-[#e7e5e4]">
+            <div className="flex items-center gap-2 text-[13px] font-medium">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#0c0a09]" />
+              <span className="text-[#0c0a09] tabular-nums">
+                {progressCompleted} of {progressTotal} answered
+              </span>
+              <span className="text-[#a8a29e]">·</span>
+              <span className="text-[#777169] tabular-nums">
+                {progressPending} remaining
+              </span>
             </div>
-            <div className="flex flex-wrap gap-1 mt-2">
-              {[...Array(progressCompleted)].map((_, i) => (
-                <div key={i} className="w-1 h-3 bg-[#1E293B] rounded-full"></div>
-              ))}
-            </div>
+            <span className="text-[11px] font-semibold uppercase tracking-[0.08em] px-2 py-0.5 rounded-full bg-[#f0efed] text-[#0c0a09] tabular-nums">
+              {percentage}%
+            </span>
           </div>
-          <div className="w-1/3 pl-6">
-            <div className="flex justify-between items-end mb-1">
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Pending</p>
-              <h4 className="text-lg font-bold leading-none text-[#EA580C]">{progressPending}</h4>
+        )}
+
+        {/* Right: Actions (Distinct Intents, No Duplicate CTA) */}
+        <div className="flex items-center gap-3 shrink-0">
+          <div className="hidden lg:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#fafafa] border border-[#f0efed] text-[12px] text-[#777169] font-medium select-none">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#0c0a09]" />
+            <span>Auto-saved</span>
+          </div>
+
+          <button
+            onClick={() => setShowExitModal(true)}
+            className="h-9 px-4.5 bg-[#292524] hover:bg-[#0c0a09] rounded-full text-[13.5px] font-medium text-white transition-all shadow-xs active:scale-[0.98] flex items-center gap-2"
+            title="Return to Student Dashboard"
+          >
+            <span>End Session</span>
+          </button>
+        </div>
+      </header>
+
+      {/* Confirmation Modal for End Session */}
+      {showExitModal && (
+        <div className="fixed inset-0 bg-[#0c0a09]/40 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl border border-[#e7e5e4] shadow-[0_16px_40px_rgba(0,0,0,0.12)] p-7 max-w-md w-full relative text-left">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#f0efed] text-[#0c0a09] text-[11px] font-semibold uppercase tracking-[0.08em] mb-3">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#0c0a09]" />
+              Session Navigation
             </div>
-            <div className="flex flex-wrap gap-1 mt-2">
-              {[...Array(progressPending)].map((_, i) => (
-                <div key={i} className="w-1 h-3 bg-[#EA580C] rounded-full"></div>
-              ))}
+            <h3 className="font-serif font-light text-2xl sm:text-[28px] text-[#0c0a09] mb-2.5 tracking-[-0.02em] leading-snug">
+              Return to Student Desk?
+            </h3>
+            <p className="text-[14.5px] text-[#4e4e4e] leading-relaxed mb-6 font-normal">
+              Your recorded voice responses and transcriptions are saved automatically. You can resume this paper at any time from your dashboard.
+            </p>
+            <div className="flex items-center justify-end gap-3">
+              <button
+                onClick={() => setShowExitModal(false)}
+                className="h-10 px-5 rounded-full bg-white border border-[#d6d3d1] hover:border-[#0c0a09] text-[13.5px] font-medium text-[#292524] transition-all active:scale-[0.98]"
+              >
+                Continue Paper
+              </button>
+              <button
+                onClick={handleExitConfirm}
+                className="h-10 px-5 rounded-full bg-[#292524] hover:bg-[#0c0a09] text-white text-[13.5px] font-medium transition-all shadow-xs active:scale-[0.98]"
+              >
+                Exit to Desk
+              </button>
             </div>
           </div>
         </div>
       )}
-
-      <div className="flex gap-3 shrink-0 mt-3">
-        <button
-          onClick={handleSave}
-          className="px-5 h-10 bg-white border border-slate-200 rounded-full shadow-sm hover:bg-slate-50 font-bold text-slate-700 transition-colors"
-        >
-          Save
-        </button>
-        <button
-          onClick={handleExit}
-          className="px-5 h-10 bg-[#1E293B] rounded-full shadow-sm hover:bg-slate-800 font-bold text-white transition-colors"
-        >
-          Exit
-        </button>
-      </div>
-    </header>
+    </>
   );
 };
 

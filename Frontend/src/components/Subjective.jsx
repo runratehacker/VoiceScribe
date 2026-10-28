@@ -1,28 +1,23 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useRef, useEffect } from 'react';
 import LatexRenderer from './LatexRenderer';
 
-const Subjective = ({ fieldKey, label, heading, question, value, filled, totalQuestions, onPrev, onNext, hasPrev, hasNext }) => {
-  const [isQuestionExpanded, setIsQuestionExpanded] = useState(true);
+const Subjective = ({
+  fieldKey,
+  label,
+  heading,
+  question,
+  value,
+  filled,
+  totalQuestions,
+  onPrev,
+  onNext,
+  hasPrev,
+  hasNext
+}) => {
   const answerContainerRef = useRef(null);
-
-  const hasAutoCollapsedRef = useRef(false);
-
-  // Reset auto-collapse state and expand question when switching questions
-  useEffect(() => {
-    hasAutoCollapsedRef.current = false;
-    setIsQuestionExpanded(true);
-  }, [fieldKey]);
 
   useEffect(() => {
     if (answerContainerRef.current) {
-      const { scrollHeight, clientHeight } = answerContainerRef.current;
-
-      // If text overflows container and hasn't been auto-collapsed yet for this question
-      if (scrollHeight > clientHeight && !hasAutoCollapsedRef.current) {
-        setIsQuestionExpanded(false);
-        hasAutoCollapsedRef.current = true;
-      }
-
       answerContainerRef.current.scrollTo({
         top: answerContainerRef.current.scrollHeight,
         behavior: 'smooth'
@@ -30,96 +25,117 @@ const Subjective = ({ fieldKey, label, heading, question, value, filled, totalQu
     }
   }, [value]);
 
+  const wordCount = value ? String(value).trim().split(/\s+/).filter(Boolean).length : 0;
+
   return (
     <div className="flex-1 w-full mx-auto flex flex-col mb-4 min-h-0">
-      <div className="flex-1 bg-[#FDFDFD] rounded-4xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-200 flex flex-col p-6 md:p-8 relative overflow-hidden gap-6">
+      {/* Asymmetric Studio Split Layout (ElevenLabs Editorial Studio) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 flex-1 min-h-0 items-stretch">
 
-        {/* Top Info Bar with Navigation */}
-        <div className="flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-4 border border-slate-200 rounded-2xl px-5 py-3 bg-white shadow-sm">
-              <h2 className="text-lg font-bold text-slate-800">Question {label || fieldKey}</h2>
-              <span className="px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600 border border-slate-200">
-                Subjective
+        {/* Left Column (5 cols): Question Prompt Reading Room */}
+        <section className="lg:col-span-5 bg-white rounded-2xl shadow-[0_4px_16px_rgba(0,0,0,0.03)] border border-[#e7e5e4] p-7 sm:p-10 flex flex-col justify-between relative overflow-hidden">
+          {/* Subtle atmospheric corner gradient bloom */}
+          <div
+            className="absolute -top-20 -left-20 w-64 h-64 rounded-full opacity-30 blur-3xl pointer-events-none"
+            style={{ background: 'radial-gradient(circle, #f4c5a8 0%, #a7e5d3 50%, transparent 75%)' }}
+            aria-hidden="true"
+          />
+
+          <div className="relative z-10 flex flex-col">
+            {/* Question Meta Badge Bar */}
+            <div className="flex items-center justify-between pb-5 border-b border-[#f0efed] mb-7">
+              <div className="flex items-center gap-3">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold tracking-[0.08em] uppercase bg-[#f0efed] text-[#0c0a09]">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#0c0a09]" />
+                  Subjective
+                </span>
+                <span className="text-[14px] font-medium text-[#777169]">
+                  Question {label || fieldKey}
+                </span>
+              </div>
+              <span className="text-[12.5px] font-medium text-[#0c0a09] bg-[#fafafa] px-3 py-1 rounded-full border border-[#e7e5e4] tabular-nums">
+                {fieldKey} of {totalQuestions}
               </span>
             </div>
 
-            {/* Navigation Buttons */}
+            {/* Question Heading / Topic */}
+            {heading && (
+              <p className="text-[14px] font-medium text-[#777169] mb-2.5">
+                <LatexRenderer text={heading} />
+              </p>
+            )}
+
+            {/* Display Question Headline (Waldenburg Light 300 signature) */}
+            <h1 className="font-serif font-light text-2xl sm:text-3xl lg:text-[32px] text-[#0c0a09] leading-[1.22] tracking-tight pb-1 mb-6">
+              <LatexRenderer text={question || label} />
+            </h1>
+          </div>
+
+          {/* Voice Input Instructions Footer */}
+          <div className="relative z-10 pt-5 border-t border-[#f0efed] flex flex-col gap-1 text-[13px] text-[#777169]">
             <div className="flex items-center gap-2">
-              <button
-                onClick={onPrev}
-                disabled={!hasPrev}
-                className={`px-3 py-2 rounded-2xl font-bold transition-colors ${!hasPrev ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed' : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 shadow-sm'}`}
-              >
-                Prev
-              </button>
-              <button
-                onClick={onNext}
-                disabled={!hasNext}
-                className={`px-3 py-2 rounded-2xl font-bold transition-colors ${!hasNext ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed' : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 shadow-sm'}`}
-              >
-                Next
-              </button>
+              <span className="w-1.5 h-1.5 rounded-full bg-[#0c0a09]" />
+              <span className="font-medium text-[#0c0a09]">Spoken dictation enabled</span>
+            </div>
+            <p className="text-[12.5px] text-[#777169]">
+              Speak naturally at conversational volume. Your spoken words are transcribed continuously.
+            </p>
+          </div>
+        </section>
+
+        {/* Right Column (7 cols): Spoken Answer Workspace & Speech Canvas */}
+        <section className="lg:col-span-7 bg-white rounded-3xl shadow-[0_4px_16px_rgba(0,0,0,0.03)] border border-[#e7e5e4] p-6 sm:p-8 flex flex-col justify-between overflow-hidden">
+          {/* Header with Word Count & Status */}
+          <div className="flex items-center justify-between pb-4 border-b border-[#f0efed] mb-4">
+            <div className="flex items-center gap-2.5">
+              <h2 className="font-serif font-light text-[22px] text-[#0c0a09] tracking-[-0.02em]">
+                Spoken Transcript
+              </h2>
+            </div>
+            <div className="flex items-center gap-2.5">
+              <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#0c0a09] bg-[#f0efed] px-3 py-1 rounded-full tabular-nums">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#0c0a09]" />
+                {wordCount} {wordCount === 1 ? 'Word' : 'Words'}
+              </span>
             </div>
           </div>
-          <span className="text-slate-400 font-medium text-sm tracking-wide pr-2">{fieldKey} / {totalQuestions}</span>
-        </div>
 
-        {/* Question Text Box - Only visible when expanded */}
-        <div
-          className={`w-full border border-slate-200 rounded-2xl p-6 md:p-8 shadow-sm shrink-0 bg-white flex flex-col items-center justify-center min-h-30 cursor-pointer hover:border-slate-300 hover:shadow-md transition-all duration-300 transform origin-top gap-2 ${isQuestionExpanded ? 'scale-y-100 opacity-100' : 'scale-y-0 opacity-0 h-0 p-0 min-h-0 hidden'}`}
-          onClick={() => setIsQuestionExpanded(false)}
-          title="Click to collapse question"
-        >
-          {heading && (
-            <span className="text-sm font-semibold tracking-wider text-black-600 uppercase mb-1 text-center">
-              <LatexRenderer text={heading} />
-            </span>
-          )}
-          <h1 className="text-xl md:text-2xl font-bold text-slate-800 leading-snug text-center w-full">
-            <LatexRenderer text={question || label} />
-          </h1>
-        </div>
-
-        {/* Answer Workspace Box */}
-        <div className="flex-1 w-full border border-slate-200 rounded-2xl shadow-sm bg-white relative p-6 md:p-8 transition-all duration-300 flex flex-col">
-
-          {/* Floating Q Button - Only visible when question is collapsed */}
-          {!isQuestionExpanded && (
-            <button
-              onClick={() => setIsQuestionExpanded(true)}
-              className="absolute top-4 right-4 w-11 h-11 rounded-xl bg-[#F8FAFC] border border-slate-200 hover:bg-slate-100 hover:border-slate-300 text-slate-700 flex items-center justify-center font-bold text-lg shadow-sm transition-all z-10"
-              title="Show Question"
-            >
-              Q
-            </button>
-          )}
-
-          {/* Actual Workspace / Canvas area */}
+          {/* Interactive Speech Canvas */}
           <div
             ref={answerContainerRef}
-            className="w-full h-full rounded-xl bg-slate-50/50 border border-dashed border-slate-300 flex flex-col text-slate-400 p-6 overflow-y-auto [&::-webkit-scrollbar]:hidden"
-            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+            className="flex-1 w-full rounded-2xl bg-[#fafafa] border border-[#e7e5e4] p-6 sm:p-8 overflow-y-auto scrollbar-none min-h-70"
           >
             {value ? (
-              <div className="w-full flex-1">
-                <div className="text-slate-800 text-base md:text-lg leading-relaxed wrap-break-word whitespace-pre-wrap text-left">
-                  <LatexRenderer text={value} />
-                  <span className="inline-block w-0.5 h-5 bg-blue-500 ml-1 animate-pulse align-text-bottom" />
-                </div>
+              <div className="text-[#0c0a09] text-[16.5px] sm:text-[18px] leading-[1.7] wrap-break-word whitespace-pre-wrap text-left font-normal">
+                <LatexRenderer text={value} />
+                <span className="inline-block w-0.5 h-5 bg-[#292524] ml-1 animate-pulse align-text-bottom" />
               </div>
             ) : (
-              <div className="w-full h-full flex flex-col items-center justify-center">
-                <svg className="w-12 h-12 mb-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                </svg>
-                <p className="font-medium text-lg text-slate-500">Your Answer Workspace</p>
-                <p className="text-sm mt-2">Press mic icon button to record your answer.</p>
+              <div className="w-full h-full flex flex-col items-center justify-center text-center py-12">
+                {/* ElevenLabs voice-icon-circular */}
+                <div className="w-12 h-12 rounded-full bg-white shadow-2xs border border-[#e7e5e4] text-[#292524] flex items-center justify-center mb-4">
+                  <div className="flex items-center gap-1" aria-hidden="true">
+                    <span className="w-0.5 h-3.5 bg-[#292524] rounded-full" />
+                    <span className="w-0.5 h-5 bg-[#292524] rounded-full" />
+                    <span className="w-0.5 h-2.5 bg-[#292524] rounded-full" />
+                  </div>
+                </div>
+                <h3 className="font-serif font-light text-2xl text-[#0c0a09] tracking-[-0.02em] mb-1.5">
+                  Transcript Canvas Ready
+                </h3>
+                <p className="text-[14px] text-[#777169] max-w-sm leading-relaxed">
+                  Begin speaking or toggle the microphone control below to dictate your answer in real time.
+                </p>
               </div>
             )}
           </div>
 
-        </div>
+          {/* Transcript Footer Status */}
+          <div className="pt-4 border-t border-[#f0efed] mt-4 flex items-center justify-between text-[12.5px] text-[#777169]">
+            <span>Continuous voice capture</span>
+            <span className="text-[#0c0a09] font-medium">Synced</span>
+          </div>
+        </section>
 
       </div>
     </div>

@@ -84,103 +84,179 @@ const TeacherDashboard = () => {
     }
   };
 
+  const displayName = user?.name || user?.username || 'Teacher';
+
   return (
-    <div className="h-screen w-full overflow-hidden bg-[#F3F4F8] p-4 md:p-6 flex flex-col font-sans text-slate-800">
+    <div className="min-h-dvh w-full flex flex-col bg-[#f5f5f5] text-[#292524] relative overflow-x-hidden font-sans selection:bg-[#292524] selection:text-white">
 
-      {/* Top Navigation EXACTLY like FormList */}
-      <nav className="w-full flex items-center justify-between mb-8 px-2">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-full bg-[#EA580C] flex items-center justify-center">
-            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-            </svg>
+      {/* Atmospheric Pastel Gradient Orbs (ElevenLabs signature) */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
+        <div
+          className="absolute -top-32 right-1/4 w-160 h-160 rounded-full opacity-35 blur-3xl"
+          style={{
+            background: 'radial-gradient(circle at center, #c8b8e0 0%, #a8c8e8 45%, transparent 75%)'
+          }}
+        />
+        <div
+          className="absolute top-96 -left-32 w-135 h-135 rounded-full opacity-30 blur-3xl"
+          style={{
+            background: 'radial-gradient(circle at center, #f4c5a8 0%, #a7e5d3 45%, transparent 75%)'
+          }}
+        />
+      </div>
+
+      {/* Floating Top Navigation Bar */}
+      <div className="sticky top-3 sm:top-4 z-40 w-full max-w-7xl mx-auto px-4 sm:px-6 transition-all">
+        <header className="w-full bg-white/90 backdrop-blur-md rounded-[22px] border border-[#e7e5e4] shadow-[0_4px_20px_rgba(0,0,0,0.03)] px-5 sm:px-6 py-3 flex items-center justify-between gap-4 transition-all">
+
+          {/* Left: Brand Monogram & Wordmark */}
+          <div className="flex items-center gap-3.5 shrink-0">
+            <div className="flex items-center gap-1.5 h-4.5 px-0.5" aria-hidden="true">
+              <span className="w-0.5 h-3.5 bg-[#292524] rounded-full" />
+              <span className="w-0.5 h-5 bg-[#292524] rounded-full" />
+              <span className="w-0.5 h-2.5 bg-[#292524] rounded-full" />
+            </div>
+            <span className="text-[15px] font-semibold tracking-[0.2em] text-[#0c0a09] uppercase select-none">
+              VOICESCRIBE
+            </span>
+            <span className="hidden sm:inline-block w-px h-4 bg-[#e7e5e4]" aria-hidden="true" />
+            <span className="hidden sm:inline-flex items-center gap-1.5 text-[11px] font-semibold tracking-wider uppercase px-2.5 py-0.5 rounded-full bg-[#f0efed] text-[#292524]">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#0c0a09]" />
+              TEACHER DESK
+            </span>
           </div>
-          <span className="text-xl font-bold tracking-tight">VOICE SCRIBE <span className="text-[#EA580C] text-sm ml-2 font-medium">TEACHER</span></span>
-        </div>
 
-        <div className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-500">
-          <a href="#" className="text-slate-800 border-b-2 border-slate-800 pb-1 text-lg">Dashboard</a>
-        </div>
+          {/* Center: Navigation Pill */}
+          <nav className="hidden md:inline-flex items-center gap-1 bg-[#fafafa] p-1 rounded-full border border-[#f0efed]" aria-label="Teacher Navigation">
+            <span className="px-4 py-1.5 rounded-full text-[13.5px] font-medium bg-[#292524] text-white shadow-xs select-none">
+              Paper Management
+            </span>
+          </nav>
 
-        <div className="flex items-center gap-4">
-          <button className="w-10 h-10 bg-white rounded-full shadow-sm flex items-center justify-center text-slate-600 hover:bg-slate-50">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-          </button>
-          <button className="w-10 h-10 bg-white rounded-full shadow-sm flex items-center justify-center text-slate-600 hover:bg-slate-50 relative">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
-            <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
-          </button>
-          <div className="relative">
-            <button
-              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              className="w-10 h-10 bg-white rounded-full shadow-sm flex items-center justify-center  hover:ring-2 hover:ring-[#EA580C] hover:text-[#EA580C] transition-all"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
-            </button>
-
-            {isDropdownOpen && (
-              <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-slate-100 py-1 z-50">
-                <button
-                  onClick={handleLogout}
-                  className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 font-medium"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
-                  Log Out
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      </nav>
-
-      {/* Main Layout Area */}
-      <div className="flex-1 overflow-y-auto w-full flex flex-col lg:flex-row gap-8 px-2 pb-4">
-
-        {/* Left Column (Matches "Attempted Papers" list from FormList) */}
-        <div className="w-full lg:w-7/12 flex flex-col gap-6">
-          <div className="bg-white rounded-[2.5rem] p-8 shadow-sm border border-slate-200 flex-1 relative overflow-hidden flex flex-col">
-            <div className="flex items-center justify-between mb-8">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-[#F3F4F6] flex items-center justify-center text-slate-500">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                </div>
-                <h2 className="text-2xl font-bold">Uploaded Papers</h2>
-              </div>
-              <button className="flex items-center gap-1 text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors">
-                View All
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path></svg>
+          {/* Right: User Profile Pill & Dropdown */}
+          <div className="flex items-center gap-3 shrink-0">
+            <div className="relative">
+              <button
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                className="flex items-center gap-2.5 h-9 pl-1.5 pr-3 rounded-full bg-[#fafafa] hover:bg-white border border-[#e7e5e4] hover:border-[#d6d3d1] transition-all text-[14px] text-[#292524] active:scale-[0.99] shadow-2xs"
+                aria-label="User account menu"
+                aria-expanded={isDropdownOpen}
+              >
+                <span className="w-6.5 h-6.5 rounded-full bg-[#292524] text-white flex items-center justify-center shrink-0">
+                  <span className="flex items-center gap-0.5" aria-hidden="true">
+                    <span className="w-[1.5px] h-2 bg-white rounded-full" />
+                    <span className="w-[1.5px] h-3 bg-white rounded-full" />
+                    <span className="w-[1.5px] h-1.5 bg-white rounded-full" />
+                  </span>
+                </span>
+                <span className="font-medium hidden sm:inline text-[13.5px] text-[#0c0a09]">
+                  {displayName}
+                </span>
+                <svg className={`w-3.5 h-3.5 text-[#777169] transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                </svg>
               </button>
+
+              {isDropdownOpen && (
+                <div className="absolute right-0 mt-2.5 w-56 bg-white rounded-[20px] shadow-[0_12px_36px_rgba(0,0,0,0.08)] border border-[#e7e5e4] py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+                  <div className="px-4 py-3 border-b border-[#f0efed]">
+                    <div className="flex items-center justify-between mb-1">
+                      <p className="text-[11px] text-[#777169] uppercase tracking-wider font-semibold">Account</p>
+                      <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full bg-[#f0efed] text-[#0c0a09]">
+                        <span className="w-1 h-1 rounded-full bg-[#0c0a09]" />
+                        Faculty
+                      </span>
+                    </div>
+                    <p className="text-[14.5px] font-medium text-[#0c0a09] truncate">{displayName}</p>
+                    <p className="text-[12px] text-[#777169] mt-0.5">Role: Teacher</p>
+                  </div>
+
+                  <div className="pt-1.5 px-1.5">
+                    <button
+                      onClick={handleLogout}
+                      className="w-full text-left px-3 py-2 text-[13.5px] text-[#dc2626] hover:bg-[#fef2f2] rounded-xl flex items-center gap-2.5 font-medium transition-colors"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                      </svg>
+                      Sign Out
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+        </header>
+      </div>
+
+      {/* Main Content Area */}
+      <main className="w-full max-w-7xl mx-auto px-6 pt-7 sm:pt-9 pb-12 flex-1 flex flex-col gap-10 z-10">
+
+        {/* Editorial Header */}
+        <section className="flex flex-col gap-2">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/80 border border-[#e7e5e4] text-[11px] font-semibold tracking-[0.18em] uppercase text-[#777169] w-fit mb-2 shadow-2xs">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#0c0a09]" />
+            <span>CURRICULUM STUDIO</span>
+          </div>
+          <h1 className="font-serif font-light text-4xl sm:text-5xl text-[#0c0a09] tracking-[-0.03em] leading-[1.1] pb-1">
+            Assessment Library.
+          </h1>
+          <p className="text-[16px] text-[#4e4e4e] max-w-xl leading-relaxed">
+            Publish PDF worksheets and review voice-transcribed student submissions across classes.
+          </p>
+        </section>
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+
+          {/* Left Column (7 cols): Uploaded Papers */}
+          <div className="lg:col-span-7 bg-white rounded-3xl p-7 sm:p-8 shadow-[0_4px_24px_rgba(0,0,0,0.03)] border border-[#e7e5e4] flex flex-col">
+            <div className="flex items-center justify-between mb-6 pb-4 border-b border-[#f0efed]">
+              <div>
+                <h2 className="font-serif font-light text-2xl sm:text-[28px] text-[#0c0a09] tracking-[-0.02em]">
+                  Uploaded Papers
+                </h2>
+                <p className="text-[14px] text-[#777169] mt-1">
+                  Active worksheets assigned to students.
+                </p>
+              </div>
+              <span className="inline-flex items-center gap-1.5 text-[12px] font-semibold tracking-wider uppercase px-3 py-1 rounded-full bg-[#f0efed] text-[#0c0a09]">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#0c0a09]" />
+                {uploadedPapers.length} Papers
+              </span>
             </div>
 
-            <div className="flex-1 overflow-y-auto pr-2 flex flex-col gap-4">
+            <div className="divide-y divide-[#f0efed]">
               {loadingPapers ? (
-                <div className="text-center py-4 text-slate-500">Loading papers...</div>
+                <div className="py-12 text-center text-[#777169] text-[15px]">Loading papers...</div>
               ) : uploadedPapers.length === 0 ? (
-                <div className="text-center py-8 text-slate-500 border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50">
-                  No papers uploaded yet. Upload your first paper!
+                <div className="py-12 text-center text-[#777169] border border-dashed border-[#d6d3d1] rounded-2xl bg-[#fafafa] text-[15px]">
+                  No papers uploaded yet. Upload your first worksheet on the right.
                 </div>
               ) : (
-                uploadedPapers.map((paper, idx) => (
-                  <div key={paper.id} className="flex items-center justify-between p-4 rounded-2xl border border-slate-100 bg-slate-50/50 hover:bg-slate-50 transition-colors group">
-                    <div className="flex items-center gap-4">
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white ${idx % 2 === 0 ? 'bg-slate-800' : 'bg-[#EA580C]'}`}>
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                uploadedPapers.map((paper) => (
+                  <div key={paper.id} className="py-4 first:pt-0 last:pb-0 flex items-center justify-between gap-4 group">
+                    <div className="flex items-center gap-4 min-w-0">
+                      <div className="w-10 h-10 rounded-full bg-[#f0efed] text-[#292524] flex items-center justify-center shrink-0">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
                       </div>
-                      <div>
-                        <div className="flex items-center gap-2 mb-0.5">
-                          <h3 className="font-bold text-slate-800">{paper.name}</h3>
-                          <span className="bg-slate-200 text-slate-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2.5 mb-0.5 flex-wrap">
+                          <h3 className="font-medium text-[16px] text-[#0c0a09] truncate">{paper.name}</h3>
+                          <span className="bg-[#f0efed] text-[#292524] text-[11px] font-semibold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
                             {paper.subject}
                           </span>
                         </div>
-                        <p className="text-xs text-slate-500 font-medium">Uploaded {paper.date}</p>
+                        <p className="text-[13px] text-[#777169]">Uploaded {paper.date}</p>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-6">
+                    <div className="flex items-center gap-5 shrink-0">
                       <div className="text-right hidden sm:block">
-                        <p className="text-xs text-slate-400 font-medium mb-0.5">Submissions</p>
-                        <p className="font-bold text-slate-800">{paper.submissions || 0}</p>
+                        <p className="text-[11px] text-[#777169] uppercase tracking-wider font-semibold">Submissions</p>
+                        <p className="font-serif text-[20px] text-[#0c0a09] leading-tight">{paper.submissions || 0}</p>
                       </div>
 
                       <div className="flex items-center gap-2">
@@ -189,17 +265,21 @@ const TeacherDashboard = () => {
                           download
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-full shadow-sm hover:border-slate-400 hover:text-slate-800 transition-all text-sm font-bold text-slate-600"
+                          className="w-9 h-9 rounded-full border border-[#e7e5e4] hover:border-[#0c0a09] hover:bg-[#fafafa] text-[#292524] transition-all flex items-center justify-center"
+                          title="Download PDF"
                         >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                          </svg>
                         </a>
                         <button
                           onClick={() => alert(`Viewing submissions for: ${paper.name}`)}
-                          className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-full shadow-sm hover:border-[#EA580C] hover:text-[#EA580C] transition-all text-sm font-bold text-slate-600"
+                          className="h-9 px-4 bg-white border border-[#d6d3d1] hover:border-[#0c0a09] rounded-full text-[13px] font-medium text-[#292524] hover:bg-[#fafafa] transition-all flex items-center gap-1.5"
                         >
                           <span className="hidden sm:inline">View</span>
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path></svg>
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                          </svg>
                         </button>
                       </div>
                     </div>
@@ -208,87 +288,101 @@ const TeacherDashboard = () => {
               )}
             </div>
           </div>
-        </div>
 
-        {/* Right Column (Matches "Available Papers" column from FormList) */}
-        <div className="w-full lg:w-5/12 flex flex-col gap-6">
-          <div className="flex justify-between items-center mt-2">
-            <h2 className="text-2xl font-bold">Paper Management</h2>
-          </div>
+          {/* Right Column (5 cols): Upload New Paper */}
+          <div className="lg:col-span-5 bg-white rounded-3xl p-7 sm:p-8 shadow-[0_4px_24px_rgba(0,0,0,0.03)] border border-[#e7e5e4] flex flex-col">
+            <h3 className="font-serif font-light text-2xl sm:text-[26px] text-[#0c0a09] tracking-[-0.02em] mb-1.5">
+              Upload New Paper
+            </h3>
+            <p className="text-[14px] text-[#777169] mb-6">
+              Add a structured PDF worksheet for voice-enabled student evaluation.
+            </p>
 
-          <div className="flex-1 flex flex-col">
-            {/* Upload New Paper Card (Matches "Progress Card" from FormList) */}
-            <div className="bg-white rounded-[2.5rem] p-8 shadow-sm border border-slate-200 flex-1 flex flex-col">
-              <h3 className="font-bold text-xl mb-2 text-slate-800">Upload New Paper</h3>
-              <p className="text-sm text-slate-500 mb-8">Upload a PDF worksheet for your students to fill out using voice.</p>
+            <form onSubmit={handleUpload} className="flex flex-col gap-4 w-full">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[13px] font-medium text-[#292524]">
+                  Paper Title
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g., Factorization Worksheet"
+                  value={paperName}
+                  onChange={(e) => setPaperName(e.target.value)}
+                  className="w-full h-11 px-3.5 rounded-lg bg-white border border-[#d6d3d1] text-[15px] text-[#0c0a09] placeholder-[#a8a29e] outline-none focus:border-[#292524] focus:ring-1 focus:ring-[#292524] transition-all"
+                  required
+                />
+              </div>
 
-              <form onSubmit={handleUpload} className="flex flex-col items-center gap-3 w-full flex-1">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[13px] font-medium text-[#292524]">
+                  Subject
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g., Mathematics"
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
+                  className="w-full h-11 px-3.5 rounded-lg bg-white border border-[#d6d3d1] text-[15px] text-[#0c0a09] placeholder-[#a8a29e] outline-none focus:border-[#292524] focus:ring-1 focus:ring-[#292524] transition-all"
+                  required
+                />
+              </div>
 
-                {/* Form Metadata Inputs */}
-                <div className="w-full flex flex-col gap-4">
-                  <input
-                    type="text"
-                    placeholder="Worksheet / Question Paper     Name"
-                    value={paperName}
-                    onChange={(e) => setPaperName(e.target.value)}
-                    className="w-full px-3 py-3 rounded-xl bg-[#F3F4F6] border border-transparent focus:border-[#EA580C]/20 focus:bg-white outline-none transition-all text-base text-slate-700 placeholder-slate-400"
-                    required
-                  />
-                  <input
-                    type="text"
-                    placeholder="Subject (e.g., Science)"
-                    value={subject}
-                    onChange={(e) => setSubject(e.target.value)}
-                    className="w-full px-3 py-3 rounded-xl bg-[#F3F4F6] border border-transparent focus:border-[#EA580C]/20 focus:bg-white outline-none transition-all text-base text-slate-700 placeholder-slate-400"
-                    required
-                  />
-                  <select
-                    value={assignedTo}
-                    onChange={(e) => setAssignedTo(e.target.value)}
-                    className="w-full px-3 py-3 rounded-xl bg-[#F3F4F6] border border-transparent focus:border-[#EA580C]/20 focus:bg-white outline-none transition-all text-base text-slate-700 cursor-pointer"
-                  >
-                    <option value="All Students">All Students</option>
-                    <option value="Class 8A">Class 8A</option>
-                    <option value="Class 8B">Class 8B</option>
-                    <option value="Class 9A">Class 9A</option>
-                  </select>
-                </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[13px] font-medium text-[#292524]">
+                  Assign To
+                </label>
+                <select
+                  value={assignedTo}
+                  onChange={(e) => setAssignedTo(e.target.value)}
+                  className="w-full h-11 px-3.5 rounded-lg bg-white border border-[#d6d3d1] text-[15px] text-[#0c0a09] outline-none focus:border-[#292524] focus:ring-1 focus:ring-[#292524] transition-all cursor-pointer"
+                >
+                  <option value="All Students">All Students</option>
+                  <option value="Class 8A">Class 8A</option>
+                  <option value="Class 8B">Class 8B</option>
+                  <option value="Class 9A">Class 9A</option>
+                </select>
+              </div>
 
-                <label className="w-full flex-1 flex flex-col items-center justify-center py-3 px-4 bg-slate-50 text-blue rounded-2xl shadow-inner border-2 border-dashed border-slate-200 hover:bg-slate-100 hover:border-[#EA580C] transition-colors cursor-pointer group min-h-15">
-                  <svg className="w-6 h-6 text-slate-400 group-hover:text-[#EA580C] mb-1 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
-                  <span className="text-sm font-medium text-slate-600 group-hover:text-[#EA580C] transition-colors text-center px-4 wrap-break-word line-clamp-1">
+              <div className="flex flex-col gap-1.5 mt-1">
+                <span className="text-[13px] font-medium text-[#292524]">
+                  Worksheet File (PDF)
+                </span>
+                <label className="w-full flex flex-col items-center justify-center py-6 px-4 bg-[#fafafa] rounded-xl border border-dashed border-[#d6d3d1] hover:border-[#0c0a09] hover:bg-white transition-all cursor-pointer group">
+                  <svg className="w-6 h-6 text-[#777169] group-hover:text-[#0c0a09] mb-2 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                  </svg>
+                  <span className="text-[14px] font-medium text-[#292524] text-center px-4 truncate max-w-full">
                     {file ? file.name : "Select or drop PDF file"}
                   </span>
-                  <input type='file' className="hidden" accept=".pdf" onChange={handleFileChange} />
+                  <input type="file" className="hidden" accept=".pdf" onChange={handleFileChange} />
                 </label>
+              </div>
 
-                {message && (
-                  <p className={`text-xs font-medium text-center ${message.includes('Error') || message.includes('Please') ? 'text-red-500' : 'text-green-500'}`}>
-                    {message}
-                  </p>
-                )}
+              {message && (
+                <p className={`text-[13px] font-medium text-center ${message.includes('Error') || message.includes('Please') ? 'text-[#dc2626]' : 'text-[#0c0a09]'}`}>
+                  {message}
+                </p>
+              )}
 
-                {file && paperName && subject && (
-                  <button
-                    type="submit"
-                    disabled={uploading}
-                    className={`w-full py-4 mt-2 rounded-full text-white text-base font-bold transition-all shadow-sm flex justify-center items-center gap-2 ${uploading ? 'bg-slate-300 cursor-not-allowed' : 'bg-[#1E293B] hover:bg-slate-800 active:scale-[0.98]'}`}
-                  >
-                    {uploading ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        Uploading...
-                      </>
-                    ) : 'Upload Paper'}
-                  </button>
+              <button
+                type="submit"
+                disabled={uploading || !file || !paperName || !subject}
+                className="w-full h-11 mt-2 rounded-full bg-[#292524] hover:bg-[#0c0a09] text-white text-[15px] font-medium transition-all shadow-xs flex justify-center items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.99]"
+              >
+                {uploading ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <span>Uploading...</span>
+                  </>
+                ) : (
+                  'Publish Paper'
                 )}
-              </form>
-            </div>
+              </button>
+            </form>
           </div>
 
         </div>
-
-      </div>
+      </main>
     </div>
   );
 };

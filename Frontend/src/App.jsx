@@ -1,7 +1,7 @@
 import React from 'react'
 import VoiceAssistantUI from './Frontpage'
 import Login from './components/Login'
-import FormList from './components/FormList'
+import StudentDashboard from './components/StudentDashboard'
 import TeacherDashboard from './components/TeacherDashboard'
 import { Route, Routes, Navigate } from 'react-router-dom'
 import { useAuth } from './context/AuthContext'
@@ -23,7 +23,7 @@ const App = () => {
           path='/fillform' 
           element={
             <ProtectedRoute>
-              <FormList />
+              <StudentDashboard />
             </ProtectedRoute>
           } 
         />

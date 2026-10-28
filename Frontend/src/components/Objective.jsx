@@ -1,103 +1,186 @@
 import React from 'react';
 import LatexRenderer from './LatexRenderer';
 
-const Objective = ({ fieldKey, label, heading, question, value, filled, totalQuestions, onPrev, onNext, hasPrev, hasNext, options = [], onSelectOption }) => {
+const Objective = ({
+  fieldKey,
+  label,
+  heading,
+  question,
+  value,
+  filled,
+  totalQuestions,
+  onPrev,
+  onNext,
+  hasPrev,
+  hasNext,
+  options = [],
+  onSelectOption
+}) => {
   return (
-    <main className="flex-1 w-full mx-auto flex flex-col mb-4 min-h-0">
-      <div className="flex-1 bg-[#FDFDFD] rounded-4xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-200 flex flex-col p-6 md:p-8 relative overflow-hidden gap-6">
+    <div className="flex-1 w-full mx-auto flex flex-col mb-4 min-h-0">
+      {/* Asymmetric Studio Split Layout Editorial Studio */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 flex-1 min-h-0 items-stretch">
 
-        {/* Top Info Bar with Navigation */}
-        <div className="flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-4 border border-slate-200 rounded-2xl px-5 py-3 bg-white shadow-sm">
-              <h2 className="text-lg font-bold text-slate-800">Question {label}</h2>
-              <span className="px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600 border border-slate-200">
-                Multiple Choice
+        {/* Left Column (7 cols): Question Prompt Reading Room */}
+        <section className="lg:col-span-7 bg-white rounded-2xl shadow-[0_4px_16px_rgba(0,0,0,0.03)] border border-[#e7e5e4] p-7 sm:p-10 flex flex-col justify-between relative overflow-hidden">
+          {/* Subtle atmospheric corner gradient bloom */}
+          <div
+            className="absolute -top-20 -left-20 w-64 h-64 rounded-full opacity-30 blur-3xl pointer-events-none"
+            style={{ background: 'radial-gradient(circle, #c8b8e0 0%, #a8c8e8 50%, transparent 75%)' }}
+            aria-hidden="true"
+          />
+
+          <div className="relative z-10 flex flex-col">
+            {/* Question Meta Badge Bar */}
+            <div className="flex items-center justify-between pb-5 border-b border-[#f0efed] mb-7">
+              <div className="flex items-center gap-3">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold tracking-[0.08em] uppercase bg-[#f0efed] text-[#0c0a09]">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#0c0a09]" />
+                  Multiple Choice
+                </span>
+                <span className="text-[14px] font-medium text-[#777169]">
+                  Question {label || fieldKey}
+                </span>
+              </div>
+              <span className="text-[12.5px] font-medium text-[#0c0a09] bg-[#fafafa] px-3 py-1 rounded-full border border-[#e7e5e4] tabular-nums">
+                {fieldKey} of {totalQuestions}
               </span>
             </div>
 
-            {/* Navigation Buttons */}
-            <div className="flex items-center gap-2">
-              <button
-                onClick={onPrev}
-                disabled={!hasPrev}
-                className={`px-3 py-2 rounded-2xl font-bold transition-colors ${!hasPrev ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed' : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 shadow-sm'}`}
-              >
-                Prev
-              </button>
-              <button
-                onClick={onNext}
-                disabled={!hasNext}
-                className={`px-3 py-2 rounded-2xl font-bold transition-colors ${!hasNext ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed' : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 shadow-sm'}`}
-              >
-                Next
-              </button>
-            </div>
+            {/* Question Heading / Topic */}
+            {heading && (
+              <p className="text-[14px] font-medium text-[#777169] mb-2.5">
+                <LatexRenderer text={heading} />
+              </p>
+            )}
+
+            {/* Display Question Headline (Waldenburg Light 300 signature) */}
+            <h1 className="font-serif font-light text-2xl sm:text-3xl lg:text-[34px] text-[#0c0a09] leading-[1.2] tracking-tight pb-1 mb-6">
+              <LatexRenderer text={question || label} />
+            </h1>
           </div>
-          <span className="text-slate-400 font-medium text-sm tracking-wide pr-2">{fieldKey} / {totalQuestions}</span>
-        </div>
 
-        {/* Question Text Box */}
-        <div className="w-full border border-slate-200 rounded-2xl p-6 md:p-8 shadow-sm shrink-0 bg-white flex flex-col items-center justify-center min-h-30 gap-2">
-          {heading && (
-            <span className="text-sm font-semibold tracking-wider text-black-600 uppercase mb-1 text-center">
-              <LatexRenderer text={heading} />
-            </span>
-          )}
-          <h1 className="text-xl md:text-2xl font-bold text-slate-800 leading-snug text-center w-full">
-            <LatexRenderer text={question || label} />
-          </h1>
-        </div>
+          {/* Voice Input Prompt Tip */}
+          <div className="relative z-10 pt-5 border-t border-[#f0efed] flex items-center justify-between text-[13px] text-[#777169]">
+            <div className="flex items-center gap-2.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#0c0a09]" />
+              <span className="font-medium text-[#292524]">Speak option letter or click any choice</span>
+            </div>
+            <span className="hidden sm:inline text-[#777169]">Instant capture</span>
+          </div>
+        </section>
 
-        {/* Answer Block (Options) */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 w-full overflow-y-auto pb-2" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-          {options.map((option, index) => {
-            const trimmedValue = value ? String(value).trim().toUpperCase() : "";
-            const optionLabelUpper = option.label ? String(option.label).trim().toUpperCase() : "";
-            const isSelected = trimmedValue && (
-              trimmedValue === optionLabelUpper ||
-              trimmedValue.startsWith(optionLabelUpper + '.') ||
-              trimmedValue.startsWith(optionLabelUpper + ')') ||
-              trimmedValue === `OPTION ${optionLabelUpper}`
-            );
-            if (isSelected) {
-              return (
-                <div 
-                  key={index} 
-                  onClick={() => onSelectOption && onSelectOption(option.label)}
-                  className="flex items-center gap-4 p-4 pr-3 rounded-full border border-[#333] bg-[#1A1A1A] transition-colors cursor-pointer shrink-0 shadow-md"
-                >
-                  <div className="w-10 h-10 rounded-full border border-white/40 text-white flex items-center justify-center font-bold text-base shrink-0">
-                    {option.label}
-                  </div>
-                  <span className="text-white font-bold text-base tracking-wide whitespace-normal">{option.text}</span>
-                  <div className="ml-auto w-10 h-10 rounded-full border border-white/40 text-white flex items-center justify-center shrink-0">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
-                    </svg>
-                  </div>
-                </div>
+        {/* Right Column (5 cols): Interactive Options Column */}
+        <section className="lg:col-span-5 bg-white rounded-2xl shadow-[0_4px_16px_rgba(0,0,0,0.03)] border border-[#e7e5e4] p-7 sm:p-9 flex flex-col justify-between relative overflow-hidden">
+          {/* Subtle atmospheric bottom-right gradient bloom */}
+          <div
+            className="absolute -bottom-24 -right-24 w-64 h-64 rounded-full opacity-25 blur-3xl pointer-events-none"
+            style={{ background: 'radial-gradient(circle, #f4c5a8 0%, #a7e5d3 50%, transparent 75%)' }}
+            aria-hidden="true"
+          />
+
+          {/* Top Header Bar */}
+          <div className="relative z-10 flex items-center justify-between pb-5 border-b border-[#f0efed] mb-5 shrink-0">
+            <div>
+              <h2 className="font-serif font-light text-[24px] text-[#0c0a09] tracking-[-0.02em] leading-none">
+                Answer Choices
+              </h2>
+              <p className="text-[13px] text-[#777169] mt-1.5">
+                Choose one response below
+              </p>
+            </div>
+            {value ? (
+              <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] px-3 py-1 rounded-full bg-[#292524] text-white">
+                <span className="w-1.5 h-1.5 rounded-full bg-white" />
+                Option {String(value).trim().charAt(0).toUpperCase()}
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] px-3 py-1 rounded-full bg-[#f0efed] text-[#777169]">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#0c0a09]" />
+                {options.length} Options
+              </span>
+            )}
+          </div>
+
+          {/* Balanced Vertical Stack of Tactile Option Cards */}
+          <div className="relative z-10 flex-1 flex flex-col justify-center gap-3.5 overflow-y-auto py-1 scrollbar-none">
+            {options.map((option, index) => {
+              const trimmedValue = value ? String(value).trim().toUpperCase() : "";
+              const optionLabelUpper = option.label ? String(option.label).trim().toUpperCase() : "";
+              const isSelected = Boolean(
+                trimmedValue && (
+                  trimmedValue === optionLabelUpper ||
+                  trimmedValue.startsWith(optionLabelUpper + '.') ||
+                  trimmedValue.startsWith(optionLabelUpper + ')') ||
+                  trimmedValue === `OPTION ${optionLabelUpper}`
+                )
               );
-            }
-            return (
-              <div 
-                key={index} 
-                onClick={() => onSelectOption && onSelectOption(option.label)}
-                className="flex items-center gap-4 p-4 pr-6 rounded-full border border-slate-200 bg-white hover:bg-slate-50 transition-colors cursor-pointer group shrink-0 shadow-sm"
-              >
-                <div className="w-10 h-10 rounded-full border border-slate-300 text-slate-500 flex items-center justify-center font-bold text-base group-hover:border-slate-400 shrink-0">
-                  {option.label}
-                </div>
-                <span className="text-slate-700 font-bold text-base tracking-wide whitespace-normal">{option.text}</span>
-              </div>
-            );
-          })}
-        </div>
+
+              return (
+                <button
+                  type="button"
+                  key={index}
+                  onClick={() => onSelectOption && onSelectOption(option.label)}
+                  aria-pressed={isSelected}
+                  className={`w-full text-left flex items-center justify-between gap-4 px-5 py-4 rounded-2xl border transition-all duration-200 cursor-pointer group active:scale-[0.99] ${isSelected
+                    ? 'bg-[#292524] text-white border-[#0c0a09] shadow-[0_6px_20px_rgba(12,10,9,0.12)]'
+                    : 'bg-white hover:bg-[#fafafa] text-[#0c0a09] border-[#e7e5e4] hover:border-[#0c0a09] shadow-[0_2px_8px_rgba(0,0,0,0.02)]'
+                    }`}
+                >
+                  <div className="flex items-center gap-4 min-w-0 flex-1">
+                    {/* Option Letter Circular Plate */}
+                    <span
+                      className={`w-7 h-7 rounded-full flex items-center justify-center font-serif text-[13px] shrink-0 transition-colors ${isSelected
+                        ? 'bg-white text-[#0c0a09] font-medium'
+                        : 'bg-[#f0efed] group-hover:bg-[#292524] text-[#0c0a09] group-hover:text-white font-normal'
+                        }`}
+                    >
+                      {option.label}
+                    </span>
+
+                    {/* Option Content with LaTeX Support */}
+                    <span
+                      className={`text-[16px] sm:text-[17px] leading-snug whitespace-normal flex-1 ${isSelected ? 'text-white font-medium' : 'text-[#0c0a09] font-normal'
+                        }`}
+                    >
+                      <LatexRenderer text={option.text} />
+                    </span>
+                  </div>
+
+                  {/* Right Tactile Radio Indicator */}
+                  <span
+                    className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 transition-all ${isSelected
+                      ? 'bg-white text-[#0c0a09]'
+                      : 'border border-[#d6d3d1] group-hover:border-[#0c0a09] bg-transparent'
+                      }`}
+                    aria-hidden="true"
+                  >
+                    {isSelected ? (
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                      </svg>
+                    ) : (
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#0c0a09] opacity-0 group-hover:opacity-100 transition-opacity" />
+                    )}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Quick Status Footer */}
+          <div className="relative z-10 pt-5 border-t border-[#f0efed] mt-5 flex items-center justify-between text-[13px] text-[#777169] shrink-0">
+            <span>Say &ldquo;Option A&rdquo; or click to choose</span>
+            <span className="inline-flex items-center gap-1.5 text-[#0c0a09] font-medium">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#0c0a09]" />
+              Synced
+            </span>
+          </div>
+        </section>
 
       </div>
-    </main>
+    </div>
   );
 };
 
 export default Objective;
-

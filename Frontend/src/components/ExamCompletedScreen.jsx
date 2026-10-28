@@ -1,72 +1,84 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 
-const ExamCompletedScreen = ({ onPrev, onDownload }) => {
+const ExamCompletedScreen = ({
+  onPrev,
+  onDownload,
+  progressTotal = 0,
+  progressCompleted = 0
+}) => {
+  const navigate = useNavigate();
+
   return (
     <div className="flex-1 w-full mx-auto flex flex-col mb-4 min-h-0">
-      <div className="flex-1 bg-[#FDFDFD] rounded-4xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-200 flex flex-col p-6 md:p-8 relative overflow-y-auto gap-6 [&::-webkit-scrollbar]:hidden " style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+      <div className="flex-1 bg-white rounded-2xl shadow-[0_4px_16px_rgba(0,0,0,0.03)] border border-[#e7e5e4] flex flex-col p-8 sm:p-12 relative overflow-hidden gap-8">
 
-        {/* Top Info Bar with Navigation */}
-        <div className="flex items-center justify-between shrink-0">
+        <div
+          className="absolute -top-24 -right-24 w-80 h-80 rounded-full opacity-35 blur-3xl pointer-events-none"
+          style={{
+            background: 'radial-gradient(circle at center, #a7e5d3 0%, #a8c8e8 50%, transparent 75%)'
+          }}
+          aria-hidden="true"
+        />
+
+        {/* Top Info Bar */}
+        <div className="relative z-10 flex items-center justify-between pb-5 border-b border-[#f0efed] shrink-0">
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-4 border border-slate-200 rounded-2xl px-5 py-3 bg-white shadow-sm">
-              <h2 className="text-lg font-bold text-slate-800">Submission</h2>
-              <span className="px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600 border border-slate-200">
-                Completed
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold tracking-[0.08em] uppercase bg-[#f0efed] text-[#0c0a09]">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#0c0a09]" />
+              Submission Complete
+            </span>
+            {progressTotal > 0 && (
+              <span className="text-[14px] font-medium text-[#777169] tabular-nums">
+                {progressCompleted} of {progressTotal} Questions Recorded
               </span>
-            </div>
-
-            {/* Navigation Buttons */}
-            <div className="flex items-center gap-2">
-              <button
-                onClick={onPrev}
-                className="px-3 py-2 rounded-2xl font-bold transition-colors bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 shadow-sm"
-              >
-                Prev
-              </button>
-              <button
-                disabled={true}
-                className="px-3 py-2 rounded-2xl font-bold transition-colors bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed"
-              >
-                Next
-              </button>
-            </div>
+            )}
           </div>
-          <span className="text-slate-400 font-medium text-sm tracking-wide pr-2">Done</span>
+
+          <button
+            onClick={() => navigate('/fillform')}
+            className="text-[13.5px] font-medium text-[#777169] hover:text-[#0c0a09] transition-colors"
+          >
+            Return to Desk
+          </button>
         </div>
 
         {/* Main Content Centered */}
-        <div className="flex-1 flex flex-col items-center py-4">
-          <div className="my-auto flex flex-col items-center gap-6 w-full">
+        <div className="relative z-10 flex-1 flex flex-col items-center justify-center py-6 my-auto text-center">
+          {/* ElevenLabs voice-icon-circular */}
+          <div className="w-14 h-14 rounded-full bg-[#f0efed] text-[#0c0a09] flex items-center justify-center mb-5">
+            <svg className="w-6 h-6 text-[#0c0a09]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
 
-            <div className="bg-green-50 p-5 md:p-6 rounded-full border border-green-100">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 md:h-16 md:w-16 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          <h1 className="font-serif font-light text-3xl sm:text-[42px] text-[#0c0a09] tracking-tight leading-[1.12] pb-1 mb-3">
+            Examination Completed.
+          </h1>
+
+          <p className="text-[16px] text-[#4e4e4e] max-w-lg leading-relaxed font-normal mb-8">
+            All spoken answers have been transcribed and saved to your evaluation record. Download your certified PDF transcript below or review your recorded responses.
+          </p>
+
+          <div className="flex flex-wrap items-center justify-center gap-3.5">
+            <button
+              onClick={onPrev}
+              className="h-11 px-6 rounded-full bg-white border border-[#d6d3d1] hover:border-[#0c0a09] text-[#292524] font-medium text-[14px] transition-all shadow-2xs active:scale-[0.98]"
+            >
+              Review Responses
+            </button>
+            <button
+              onClick={onDownload}
+              className="h-11 px-7 rounded-full bg-[#292524] hover:bg-[#0c0a09] text-white font-medium text-[14px] transition-all flex items-center gap-2 shadow-xs active:scale-[0.98]"
+            >
+              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.75" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
               </svg>
-            </div>
-
-            <h2 className="text-2xl md:text-3xl font-extrabold text-slate-800 text-center">Exam Completed!</h2>
-            <p className="text-slate-500 text-center text-base md:text-xl max-w-4xl px-8">
-              You have successfully answered all questions. You can now download your filled question paper or go back to review your answers.
-            </p>
-            <div className="flex flex-wrap justify-center gap-3 md:gap-4 mt-2">
-              <button
-                onClick={onPrev}
-                className="px-5 py-3 md:px-6 md:py-4 rounded-2xl font-bold bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 shadow-sm transition-all text-sm md:text-base"
-              >
-                Go Back to Review
-              </button>
-              <button
-                onClick={onDownload}
-                className="px-5 py-3 md:px-6 md:py-4 rounded-2xl font-bold bg-[#1A1A1A] text-white border border-[#333] shadow-md hover:bg-black transition-all flex items-center gap-2 text-sm md:text-base"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 md:h-5 md:w-5" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
-                </svg>
-                Download PDF
-              </button>
-            </div>
+              <span>Download PDF</span>
+            </button>
           </div>
         </div>
+
       </div>
     </div>
   );

@@ -1,86 +1,100 @@
 import React from 'react';
 import { LiveWaveform } from './Livewaveform';
 
-const VoiceFooter = ({ isRecording, toggleMicrophone }) => {
+const VoiceFooter = ({
+  isRecording,
+  toggleMicrophone,
+  onPrev,
+  onNext,
+  hasPrev = false,
+  hasNext = false
+}) => {
   return (
-    <footer className="w-full max-w-6xl mx-auto flex flex-col md:flex-row gap-4 pb-0 shrink-0">
+    <footer className="w-full max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 pt-2 pb-1 shrink-0 z-20">
 
-      {/* WAVEFORM PILL */}
-      <div className="flex-1 min-w-0 flex items-center justify-between p-2 pr-4 bg-white/40 border border-slate-200/80 rounded-[3rem] shadow-sm backdrop-blur-md">
-        <div className="w-14 h-14 rounded-full bg-slate-200 flex items-center justify-center text-slate-500 shrink-0 overflow-hidden">
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+      {/* Left: Previous Question Navigation Pill */}
+      {onPrev && (
+        <button
+          onClick={onPrev}
+          disabled={!hasPrev}
+          className={`h-11 px-5 rounded-full transition-all text-[13.5px] font-medium flex items-center gap-2 shrink-0 ${!hasPrev
+              ? 'bg-[#f0efed] text-[#777169] opacity-60 cursor-not-allowed border border-transparent'
+              : 'bg-white border border-[#d6d3d1] hover:border-[#0c0a09] text-[#292524] hover:bg-[#fafafa] shadow-2xs active:scale-[0.98]'
+            }`}
+          aria-label="Previous Question"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
           </svg>
+          <span className="hidden sm:inline">Previous</span>
+        </button>
+      )}
+
+      {/* Center: Live Audio Feed & Waveform Studio */}
+      <div className="flex-1 w-full min-w-0 flex items-center justify-between p-1.5 pl-3.5 pr-2 bg-white/95 border border-[#e7e5e4] rounded-full shadow-[0_4px_20px_rgba(0,0,0,0.03)] backdrop-blur-md">
+        <div className="flex items-center gap-3 shrink-0">
+          {/*  voice-icon-circular (32px) with 3-bar monogram */}
+          <div className="w-8 h-8 rounded-full bg-[#f0efed] text-[#292524] flex items-center justify-center shrink-0">
+            <div className="flex items-center gap-0.5" aria-hidden="true">
+              <span className="w-[1.5px] h-2.5 bg-[#292524] rounded-full" />
+              <span className="w-[1.5px] h-3.5 bg-[#292524] rounded-full" />
+              <span className="w-[1.5px] h-2 bg-[#292524] rounded-full" />
+            </div>
+          </div>
+          <div className="hidden sm:flex flex-col">
+            <span className="text-[13px] font-medium text-[#0c0a09] leading-tight">Voice Studio</span>
+            <span className="text-[11px] text-[#777169]">
+              {isRecording ? 'Listening for answer' : 'Microphone paused'}
+            </span>
+          </div>
         </div>
 
-        <div className="flex-1 min-w-0 flex flex-col justify-center px-6 gap-1">
-          <div className="flex items-center gap-2 mb-1 shrink-0">
-            <span className="font-semibold text-slate-800 text-lg pt-2 truncate">Input Audio</span>
-            {isRecording ? (
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#7BA4D6] text-white mt-2 shrink-0">Live</span>
-            ) : (
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-400 text-white mt-2 shrink-0">Inactive</span>
-            )}
-          </div>
-          <div className="w-full h-10 pt-1 overflow-hidden shrink-0">
-            <LiveWaveform
-              processing={false}
-              active={isRecording}
-              barColor="#7BA4D6"
-              barWidth={4}
-              barGap={3}
-              height={40}
-              mode="static"
-            />
-          </div>
+        {/* Center Live Waveform Bars */}
+        <div className="flex-1 max-w-xs sm:max-w-md mx-4 h-8 overflow-hidden flex items-center">
+          <LiveWaveform
+            processing={false}
+            active={isRecording}
+            barColor="#292524"
+            barWidth={3}
+            barGap={3}
+            height={28}
+            mode="static"
+          />
         </div>
 
-        <button className="w-12 h-12 rounded-full bg-white shadow-[0_2px_8px_rgb(0,0,0,0.08)] flex items-center justify-center shrink-0 hover:bg-slate-50 transition-colors text-slate-600">
-          {/* Sparkles / AI Icon */}
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-          </svg>
+        {/* Mic Toggle Button Pill */}
+        <button
+          onClick={toggleMicrophone}
+          className={`h-9 px-4 rounded-full flex items-center gap-2 transition-all active:scale-[0.98] shrink-0 ${isRecording
+              ? 'bg-[#292524] hover:bg-[#0c0a09] text-white shadow-2xs'
+              : 'bg-[#f0efed] hover:bg-[#e7e5e4] text-[#0c0a09]'
+            }`}
+          aria-label={isRecording ? 'Pause microphone' : 'Enable microphone'}
+        >
+          <span className={`w-1.5 h-1.5 rounded-full ${isRecording ? 'bg-white animate-pulse' : 'bg-[#0c0a09]'}`} />
+          <span className="text-[13px] font-medium hidden sm:inline">
+            {isRecording ? 'Recording' : 'Enable Mic'}
+          </span>
         </button>
       </div>
 
-      {/* MIC BUTTON PILL */}
-      <button
-        onClick={toggleMicrophone}
-        className="w-full md:w-[320px] lg:w-90 flex items-center justify-between p-2 pr-4 bg-white/40 border border-slate-200/80 rounded-[3rem] shadow-sm backdrop-blur-md hover:bg-white/60 transition-all active:scale-[0.98] group shrink-0"
-      >
-        <div className={`w-14 h-14 rounded-full flex items-center justify-center shrink-0 overflow-hidden transition-colors ${isRecording ? 'bg-[#FFF0E6] text-[#E05C3A]' : 'bg-slate-200 text-slate-500'}`}>
-          <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z" />
-            <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
+      {/* Right: Next Question Navigation Pill */}
+      {onNext && (
+        <button
+          onClick={onNext}
+          disabled={!hasNext}
+          className={`h-11 px-6 rounded-full transition-all text-[13.5px] font-medium flex items-center gap-2 shrink-0 ${!hasNext
+              ? 'bg-[#f0efed] text-[#777169] opacity-60 cursor-not-allowed border border-transparent'
+              : 'bg-[#292524] hover:bg-[#0c0a09] text-white shadow-xs active:scale-[0.98]'
+            }`}
+          aria-label="Next Question"
+        >
+          <span>Next</span>
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
           </svg>
-        </div>
-
-        <div className="flex-1 flex flex-col items-start px-5">
-          <div className="flex items-center gap-2">
-            <span className="font-semibold text-slate-800 text-lg">Mic</span>
-            <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium text-white transition-colors ${isRecording ? 'bg-[#E05C3A]' : 'bg-slate-400'}`}>
-              {isRecording ? 'Active' : 'Inactive'}
-            </span>
-          </div>
-          <span className="text-slate-500 text-[15px] mt-2">
-            {isRecording ? 'Listening to response...' : 'Mic is off. Tap to start.'}
-          </span>
-        </div>
-
-        <div className="w-12 h-12 rounded-full bg-white shadow-[0_2px_8px_rgb(0,0,0,0.08)] flex items-center justify-center shrink-0 group-hover:bg-slate-50 transition-colors">
-          {isRecording ? (
-            // Stop Icon
-            <svg className="w-5 h-5 text-slate-700" fill="currentColor" viewBox="0 0 24 24">
-              <rect x="6" y="6" width="12" height="12" rx="2" />
-            </svg>
-          ) : (
-            // Play Icon
-            <svg className="w-5 h-5 text-slate-700 ml-0.5" fill="currentColor" viewBox="0 0 24 24">
-              <path fillRule="evenodd" clipRule="evenodd" d="M4.5 5.653c0-1.426 1.529-2.33 2.779-1.643l11.54 6.348c1.295.712 1.295 2.573 0 3.285L7.28 19.991c-1.25.687-2.779-.217-2.779-1.643V5.653z" />
-            </svg>
-          )}
-        </div>
-      </button>
+        </button>
+      )}
 
     </footer>
   );

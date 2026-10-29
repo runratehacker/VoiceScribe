@@ -1,26 +1,8 @@
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
+import supabase from '../supabase.js';
 
-// Mock user for testing without a DB
-// In a real application, fetch from MongoDB using Mongoose
-const mockUsers = [
-  {
-    id: '1',
-    username: 'admin',
-    role: 'student',
-    // bcrypt hash for "password123"
-    passwordHash: '$2b$10$sGO43GHtoZ4Hwg2jRlBTbudYjUptcWIzfmnUOk./tJFxk/e.KS8K6'
-  },
-  {
-    id: '2',
-    username: 'teacher',
-    role: 'teacher',
-    // bcrypt hash for "password123"
-    passwordHash: '$2b$10$sGO43GHtoZ4Hwg2jRlBTbudYjUptcWIzfmnUOk./tJFxk/e.KS8K6'
-  }
-];
-
-export const login = async (req, res) => {
+const login = async (req, res) => {
   try {
     const { username, password } = req.body;
 
@@ -29,20 +11,26 @@ export const login = async (req, res) => {
     }
 
     // Find user
-    const user = mockUsers.find(u => u.username === username);
-    if (!user) {
+    let role = "student";
+    let { error, data } = await supabase.from("STUDENT").select("id, Username, Password").eq("Username", username).single();
+
+    if (error) {
+      ({ error, data } = await supabase.from("TEACHER").select("id, Username, Password").eq("Username", username).single());
+      role = "teacher";
+    }
+
+    if (error || !data) {
+      console.log("error : " + error)
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    // Verify password
-    const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
-    if (!isPasswordValid) {
+    if (password !== data.Password) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
     // Generate JWT token
     const token = jwt.sign(
-      { id: user.id, username: user.username, role: user.role },
+      { id: data.id, username: data.Username, role },
       process.env.JWT_SECRET || 'fallback_secret_key_123',
       { expiresIn: '1d' }
     );
@@ -51,9 +39,9 @@ export const login = async (req, res) => {
       message: 'Login successful',
       token,
       user: {
-        id: user.id,
-        username: user.username,
-        role: user.role
+        id: data.id,
+        username: data.Username,
+        role
       }
     });
 
@@ -62,3 +50,5 @@ export const login = async (req, res) => {
     res.status(500).json({ message: 'Server error during login' });
   }
 };
+
+export default login;

@@ -54,7 +54,9 @@ const VoiceAssistantUI = () => {
     onAudioData: sendAudioChunk
   });
 
-  const keys = Object.keys(formFields || {}).filter(k => formFields[k]?.label);
+  const keys = Object.keys(formFields || {}).filter(
+    k => formFields[k]?.label || formFields[k]?.question_number !== undefined
+  );
   const progressTotal = keys.length;
   const progressCompleted = keys.filter(k => formFields[k].filled).length;
   const progressPending = progressTotal - progressCompleted;
@@ -85,8 +87,16 @@ const VoiceAssistantUI = () => {
 
   const handleDownload = async () => {
     try {
+      const payloadFields = { ...formFields };
+      if (String(formid) === '2') {
+        if (payloadFields.answer_1 && !payloadFields.question_1) payloadFields.question_1 = payloadFields.answer_1;
+        if (payloadFields.answer_2 && !payloadFields.question_2) payloadFields.question_2 = payloadFields.answer_2;
+        if (payloadFields.answer_3 && !payloadFields.answer_9) payloadFields.answer_9 = payloadFields.answer_3;
+        if (payloadFields.answer_4 && !payloadFields.answer_10) payloadFields.answer_10 = payloadFields.answer_4;
+      }
+
       const response = await axios.post(`${API_BASE_URL}/api/download/${formid}`, {
-        formFields
+        formFields: payloadFields
       }, {
         responseType: 'blob'
       });
@@ -222,9 +232,11 @@ const VoiceAssistantUI = () => {
           <Objective
             key={currentKey}
             fieldKey={questionNumber}
+            questionNumber={currentField.question_number ?? questionNumber}
             label={currentField.label}
             heading={currentHeading}
             question={currentField.question}
+            marks={currentField.marks}
             value={currentField.value}
             filled={currentField.filled}
             options={currentField.options}
@@ -241,9 +253,11 @@ const VoiceAssistantUI = () => {
           <Subjective
             key={currentKey}
             fieldKey={questionNumber}
+            questionNumber={currentField.question_number ?? questionNumber}
             label={currentField.label}
             heading={currentHeading}
             question={currentField.question}
+            marks={currentField.marks}
             value={currentField.value}
             filled={currentField.filled}
             totalQuestions={totalQuestions}

@@ -22,4 +22,10 @@ const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_PUB
 // }
 // else console.log(data.Password);
 
+// const { error, data } = await supabase.from("PAPER").select("*");
+
+// const { error, data } = await supabase.from("PAPER").select("*").eq("id", 1)
+
+// console.log(data);
+
 export default supabase;

@@ -2,6 +2,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { API_BASE_URL } from '../config';
+import { normalizeQuestionsData } from '../hooks/useFormFields';
 
 
 const ORB_GRADIENTS = [
@@ -34,21 +35,24 @@ const StudentDashboard = () => {
   useEffect(() => {
     const fetchForms = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/api/forms`);
+        const response = await fetch(`${API_BASE_URL}/api/papers`);
         if (!response.ok) {
           throw new Error('Failed to fetch question papers');
         }
         const data = await response.json();
-        setForms(data);
+        const papersList = Array.isArray(data) ? data : [];
+        setForms(papersList);
 
         // Compute saved progress from localStorage for all forms
         const progressMap = {};
-        data.forEach(form => {
+        papersList.forEach(form => {
           const savedData = localStorage.getItem(`formFields_${form.id}`);
           if (savedData) {
             try {
               const parsed = JSON.parse(savedData);
-              const keys = Object.keys(parsed).filter(k => parsed[k]?.label);
+              const keys = Object.keys(parsed).filter(
+                k => parsed[k]?.label || parsed[k]?.question_number !== undefined
+              );
               const total = keys.length;
               const completed = keys.filter(k => parsed[k]?.filled).length;
               if (total > 0) {
@@ -65,14 +69,15 @@ const StudentDashboard = () => {
         });
         setPapersProgressMap(progressMap);
 
-        if (data.length > 0) {
-          const lastActiveId = localStorage.getItem('lastActiveFormId') || data[0].id;
-          const currentForm = data.find(f => String(f.id) === String(lastActiveId)) || data[0];
+        if (papersList.length > 0) {
+          const lastActiveId = localStorage.getItem('lastActiveFormId') || papersList[0].id;
+          const currentForm = papersList.find(f => String(f.id) === String(lastActiveId)) || papersList[0];
 
           let fields = null;
           try {
-            const fieldsRes = await fetch(`${API_BASE_URL}/api/fields/${currentForm.id}`);
-            fields = await fieldsRes.json();
+            const fieldsRes = await fetch(`${API_BASE_URL}/api/questions/${currentForm.id}`);
+            const rawFields = await fieldsRes.json();
+            fields = normalizeQuestionsData(rawFields, currentForm.id);
 
             const savedData = localStorage.getItem(`formFields_${currentForm.id}`);
             if (savedData) {
@@ -92,8 +97,10 @@ const StudentDashboard = () => {
             console.log(e);
           }
 
-          if (fields) {
-            const keys = Object.keys(fields).filter(k => fields[k].label);
+          if (fields && Object.keys(fields).length > 0) {
+            const keys = Object.keys(fields).filter(
+              k => fields[k]?.label || fields[k]?.question_number !== undefined
+            );
             const total = keys.length;
             const completed = keys.filter(k => fields[k].filled).length;
 
@@ -113,6 +120,15 @@ const StudentDashboard = () => {
                 percentage: total > 0 ? Math.round((completed / total) * 100) : 0
               }
             }));
+          } else {
+            const savedStats = progressMap[currentForm.id];
+            setCurrentProgress({
+              name: currentForm.name,
+              total: savedStats?.total || 0,
+              completed: savedStats?.completed || 0,
+              pending: (savedStats?.total || 0) - (savedStats?.completed || 0),
+              formId: currentForm.id
+            });
           }
         }
       } catch (err) {
@@ -139,23 +155,37 @@ const StudentDashboard = () => {
     { id: 105, name: 'Basic Chemistry Lab', tag: 'Science', date: 'Sep 15', score: 88, total: 100, status: 'Graded' }
   ];
 
-  // Categories list
-  const categories = ['All', 'Mathematics', 'Science', 'English', 'History'];
+  // Categories list dynamically including any subject from the papers table
+  const categories = useMemo(() => {
+    const base = ['All', 'Mathematics', 'Science', 'Social Science'];
+    forms.forEach(f => {
+      const subj = f.subject || f.tag;
+      if (subj && !base.some(c => c.toLowerCase() === subj.toLowerCase())) {
+        base.push(subj);
+      }
+    });
+    return base;
+  }, [forms]);
 
   // Category counts
   const getCategoryCount = (cat) => {
     if (cat === 'All') return forms.length;
-    return forms.filter(f => f.tag && f.tag.toLowerCase() === cat.toLowerCase()).length;
+    return forms.filter(f => {
+      const subj = f.subject || f.tag;
+      return subj && subj.toLowerCase() === cat.toLowerCase();
+    }).length;
   };
 
   // Filtered forms based on category and search
   const filteredForms = useMemo(() => {
     return forms.filter(form => {
+      const subj = form.subject || form.tag || '';
       const matchesCategory = selectedCategory === 'All' ||
-        (form.tag && form.tag.toLowerCase() === selectedCategory.toLowerCase());
+        subj.toLowerCase() === selectedCategory.toLowerCase();
       const matchesSearch = !searchQuery ||
-        form.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (form.description && form.description.toLowerCase().includes(searchQuery.toLowerCase()));
+        (form.name && form.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (form.description && form.description.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        subj.toLowerCase().includes(searchQuery.toLowerCase());
       return matchesCategory && matchesSearch;
     });
   }, [forms, selectedCategory, searchQuery]);
@@ -562,7 +592,7 @@ const StudentDashboard = () => {
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="inline-flex items-center gap-1.5 bg-[#f0efed] text-[#0c0a09] text-[11px] font-semibold px-2.5 py-1 rounded-full uppercase tracking-[0.08em]">
                             <span className="w-1.5 h-1.5 rounded-full bg-[#0c0a09]" />
-                            {form.tag || 'Assessment'}
+                            {form.subject || form.tag || 'Assessment'}
                           </span>
                           {hasStarted && (
                             <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-medium bg-white border border-[#e7e5e4] text-[#292524]">
@@ -592,9 +622,17 @@ const StudentDashboard = () => {
                         </p>
                       </div>
 
-                      {/* Bottom Row: Hairline Divider, Question Count & Single Action Verb CTA */}
+                      {/* Bottom Row: Hairline Divider, Total Marks + Question Count & Single Action Verb CTA */}
                       <div className="relative z-10 pt-4 border-t border-[#f0efed] flex items-center justify-between gap-4">
-                        <div className="flex items-center gap-2 text-[13px] text-[#777169] font-medium">
+                        <div className="flex items-center gap-2 text-[13px] text-[#777169] font-medium tabular-nums">
+                          {form.max_marks !== undefined && form.max_marks !== null && (
+                            <>
+                              <span className="text-[#292524] font-medium">
+                                {form.max_marks} Marks
+                              </span>
+                              <span className="text-[#d6d3d1]" aria-hidden="true">·</span>
+                            </>
+                          )}
                           <span>
                             {paperStats?.total
                               ? `${paperStats.completed}/${paperStats.total} answered`

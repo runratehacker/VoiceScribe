@@ -3,9 +3,11 @@ import LatexRenderer from './LatexRenderer';
 
 const Subjective = ({
   fieldKey,
+  questionNumber,
   label,
   heading,
   question,
+  marks,
   value,
   filled,
   totalQuestions,
@@ -15,6 +17,7 @@ const Subjective = ({
   hasNext
 }) => {
   const answerContainerRef = useRef(null);
+  const displayNumber = questionNumber || label || fieldKey;
 
   useEffect(() => {
     if (answerContainerRef.current) {
@@ -43,19 +46,26 @@ const Subjective = ({
 
           <div className="relative z-10 flex flex-col">
             {/* Question Meta Badge Bar */}
-            <div className="flex items-center justify-between pb-5 border-b border-[#f0efed] mb-7">
+            <div className="flex items-center justify-between pb-5 border-b border-[#f0efed] mb-7 gap-3 flex-wrap">
               <div className="flex items-center gap-3">
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold tracking-[0.08em] uppercase bg-[#f0efed] text-[#0c0a09]">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#0c0a09]" />
                   Subjective
                 </span>
                 <span className="text-[14px] font-medium text-[#777169]">
-                  Question {label || fieldKey}
+                  Question {displayNumber}
                 </span>
               </div>
-              <span className="text-[12.5px] font-medium text-[#0c0a09] bg-[#fafafa] px-3 py-1 rounded-full border border-[#e7e5e4] tabular-nums">
-                {fieldKey} of {totalQuestions}
-              </span>
+              <div className="flex items-center gap-2">
+                {marks !== undefined && marks !== null && (
+                  <span className="text-[12px] font-semibold text-[#292524] bg-[#f0efed] px-2.5 py-1 rounded-full tabular-nums">
+                    {marks} {Number(marks) === 1 ? 'Mark' : 'Marks'}
+                  </span>
+                )}
+                <span className="text-[12.5px] font-medium text-[#0c0a09] bg-[#fafafa] px-3 py-1 rounded-full border border-[#e7e5e4] tabular-nums">
+                  {displayNumber} of {totalQuestions}
+                </span>
+              </div>
             </div>
 
             {/* Question Heading / Topic */}

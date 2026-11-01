@@ -41,11 +41,19 @@ export const processToolCalls = (functionCalls, stateRef, callbacks) => {
 
     // matching label ----> of answer_1 object
 
-    // 3. If Gemini just said "1", see if it matches "Question 1"
+    // 3. If Gemini just said "1", see if it matches "Question 1" or question_number
     for (const key of Object.keys(formFields)) {
-      const fieldLabelLower = (formFields[key]?.label || "").toLowerCase().trim();
-      if (fieldLabelLower === `question ${labelLower}` || fieldLabelLower === `q${labelLower}`) {
-        return { key, field: formFields[key] };
+      const field = formFields[key];
+      const fieldLabelLower = (field?.label || "").toLowerCase().trim();
+      const qNumStr = field?.question_number !== undefined ? String(field.question_number).toLowerCase().trim() : "";
+      if (
+        fieldLabelLower === `question ${labelLower}` ||
+        fieldLabelLower === `q${labelLower}` ||
+        qNumStr === labelLower ||
+        labelLower === `question ${qNumStr}` ||
+        labelLower === `q${qNumStr}`
+      ) {
+        return { key, field };
       }
     }
 
@@ -76,17 +84,18 @@ export const processToolCalls = (functionCalls, stateRef, callbacks) => {
         const field = formFields[currentKey];
         const heading = field.heading || "No heading";
         const question = field.question || "No question text";
-        const label = field.label || currentKey;
+        const label = field.label || (field.question_number !== undefined ? String(field.question_number) : currentKey);
+        const marksText = field.marks !== undefined && field.marks !== null ? `\n- Marks: ${field.marks}` : "";
         const answerStatus = field.filled ? `Already answered: "${field.value}"` : "Not yet answered";
 
         let optionsText = "";
 
-        if (field.options && Array.isArray(field.options)) {
+        if (field.options && Array.isArray(field.options) && field.options.length > 0) {
           const formattedOptions = field.options.map(opt => `[${opt.label}] ${opt.text}`).join(' | ');
           optionsText = `\n- Options: ${formattedOptions}`;
         }
 
-        outputMsg = `Current question on screen:\n- Heading: ${heading}\n- Label: ${label}\n- Question: ${question}${optionsText}\n- Status: ${answerStatus}`;
+        outputMsg = `Current question on screen:\n- Heading: ${heading}\n- Label: ${label}${marksText}\n- Question: ${question}${optionsText}\n- Status: ${answerStatus}`;
       }
 
       toolResponses.push({

@@ -2,7 +2,7 @@ import express from 'express';
 import multer from 'multer';
 import fs from 'fs';
 import path from 'path';
-import { getFormFields, getFormController, getAllForms } from '../controllers/formController.js';
+import { getQuestions, getFormController, getAllPapers } from '../controllers/formController.js';
 
 const router = express.Router();
 
@@ -15,19 +15,19 @@ const papersDbPath = path.join(uploadDir, 'papers.json');
 
 const getPapers = () => {
   if (fs.existsSync(papersDbPath)) {
-    try { 
-      const data = JSON.parse(fs.readFileSync(papersDbPath, 'utf8')); 
+    try {
+      const data = JSON.parse(fs.readFileSync(papersDbPath, 'utf8'));
       if (data && data.length > 0) return data;
-    } catch(e) {}
+    } catch (e) { }
   }
-  
+
   const defaultPapers = [
     { id: 101, name: 'Factoization WS', subject: 'Mathematics', date: 'Oct 23, 2023', submissions: 15, path: '#' },
     { id: 102, name: 'Physics Kinetics', subject: 'Science', date: 'Oct 12, 2023', submissions: 22, path: '#' },
     { id: 103, name: 'Grammar Test 1', subject: 'English', date: 'Oct 05, 2023', submissions: 18, path: '#' }
   ];
-  
-  try { fs.writeFileSync(papersDbPath, JSON.stringify(defaultPapers, null, 2)); } catch(e) {}
+
+  try { fs.writeFileSync(papersDbPath, JSON.stringify(defaultPapers, null, 2)); } catch (e) { }
   return defaultPapers;
 };
 
@@ -49,9 +49,9 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage })
 
-router.get('/forms', getAllForms);
-router.get('/fields/:formid', getFormFields);
-router.post('/download/:formid', getFormController);
+router.get('/papers', getAllPapers);
+router.get('/questions/:paperid', getQuestions);
+router.post('/download/:paperid', getFormController);
 
 router.post('/upload', upload.single('pdf'), (req, res) => {
   if (!req.file) {
@@ -59,7 +59,7 @@ router.post('/upload', upload.single('pdf'), (req, res) => {
   }
 
   const { name, subject, assignedTo } = req.body;
-  
+
   const newPaper = {
     id: Date.now(),
     filename: req.file.filename,
@@ -72,7 +72,7 @@ router.post('/upload', upload.single('pdf'), (req, res) => {
   };
 
   savePaper(newPaper);
-  
+
   res.status(200).json({
     message: 'File uploaded successfully',
     file: newPaper

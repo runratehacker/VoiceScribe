@@ -17,10 +17,16 @@ const TeacherDashboard = () => {
   useEffect(() => {
     const fetchPapers = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/api/uploaded-papers`);
+        const response = await fetch(`${API_BASE_URL}/api/papers`);
         if (response.ok) {
           const data = await response.json();
-          setUploadedPapers(data);
+          setUploadedPapers(Array.isArray(data) ? data : []);
+        } else {
+          const fallbackRes = await fetch(`${API_BASE_URL}/api/uploaded-papers`);
+          if (fallbackRes.ok) {
+            const fallbackData = await fallbackRes.json();
+            setUploadedPapers(Array.isArray(fallbackData) ? fallbackData : []);
+          }
         }
       } catch (err) {
         console.error('Failed to fetch papers', err);
@@ -248,20 +254,39 @@ const TeacherDashboard = () => {
                           <span className="bg-[#f0efed] text-[#292524] text-[11px] font-semibold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
                             {paper.subject}
                           </span>
+                          {paper.grade !== undefined && paper.grade !== null && (
+                            <span className="bg-[#fafafa] border border-[#e7e5e4] text-[#777169] text-[11px] font-medium px-2 py-0.5 rounded-full">
+                              Grade {paper.grade}
+                            </span>
+                          )}
                         </div>
-                        <p className="text-[13px] text-[#777169]">Uploaded {paper.date}</p>
+                        <p className="text-[13px] text-[#777169]">
+                          {paper.duration ? `${paper.duration} mins` : ''}
+                          {paper.duration && paper.max_marks ? ' · ' : ''}
+                          {paper.max_marks ? `${paper.max_marks} marks` : ''}
+                          {(paper.duration || paper.max_marks) && (paper.end_date || paper.date) ? ' · ' : ''}
+                          {paper.end_date
+                            ? `Due ${new Date(paper.end_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
+                            : paper.date
+                              ? `Uploaded ${paper.date}`
+                              : ''}
+                        </p>
                       </div>
                     </div>
 
                     <div className="flex items-center gap-5 shrink-0">
                       <div className="text-right hidden sm:block">
-                        <p className="text-[11px] text-[#777169] uppercase tracking-wider font-semibold">Submissions</p>
-                        <p className="font-serif text-[20px] text-[#0c0a09] leading-tight">{paper.submissions || 0}</p>
+                        <p className="text-[11px] text-[#777169] uppercase tracking-wider font-semibold">
+                          {paper.max_marks ? 'Max Marks' : 'Submissions'}
+                        </p>
+                        <p className="font-serif text-[20px] text-[#0c0a09] leading-tight">
+                          {paper.max_marks ?? paper.submissions ?? 0}
+                        </p>
                       </div>
 
                       <div className="flex items-center gap-2">
                         <a
-                          href={`${API_BASE_URL}${paper.path}`}
+                          href={paper.path ? `${API_BASE_URL}${paper.path}` : paper.filename ? `${API_BASE_URL}/uploads/${paper.filename}` : '#'}
                           download
                           target="_blank"
                           rel="noopener noreferrer"

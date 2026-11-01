@@ -131,7 +131,7 @@ const Objective = ({
                 <button
                   type="button"
                   key={index}
-                  onClick={() => onSelectOption && onSelectOption(option.label)}
+                  onClick={() => onSelectOption && onSelectOption(isSelected ? '' : option.label)}
                   aria-pressed={isSelected}
                   className={`w-full text-left flex items-center justify-between gap-4 px-5 py-4 rounded-2xl border transition-all duration-200 cursor-pointer group active:scale-[0.99] ${isSelected
                     ? 'bg-[#292524] text-white border-[#0c0a09] shadow-[0_6px_20px_rgba(12,10,9,0.12)]'

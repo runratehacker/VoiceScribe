@@ -245,7 +245,9 @@ const VoiceAssistantUI = () => {
             onNext={handleNext}
             hasPrev={currentQuestionIndex > 0}
             hasNext={currentQuestionIndex < totalQuestions}
-            onSelectOption={(optionLabel) => onFieldFilled(currentKey, optionLabel, true)}
+            onSelectOption={(optionLabel) =>
+              optionLabel ? onFieldFilled(currentKey, optionLabel, true) : onFieldReset(currentKey)
+            }
           />
         )}
 
@@ -265,6 +267,7 @@ const VoiceAssistantUI = () => {
             onNext={handleNext}
             hasPrev={currentQuestionIndex > 0}
             hasNext={currentQuestionIndex < totalQuestions}
+            onClear={() => onFieldReset(currentKey)}
           />
         )}
 

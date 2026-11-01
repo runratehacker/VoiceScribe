@@ -14,10 +14,12 @@ const Subjective = ({
   onPrev,
   onNext,
   hasPrev,
-  hasNext
+  hasNext,
+  onClear
 }) => {
   const answerContainerRef = useRef(null);
   const displayNumber = questionNumber || label || fieldKey;
+  const hasAnswer = Boolean(value && String(value).trim().length > 0) || Boolean(filled);
 
   useEffect(() => {
     if (answerContainerRef.current) {
@@ -95,18 +97,32 @@ const Subjective = ({
 
         {/* Right Column (7 cols): Spoken Answer Workspace & Speech Canvas */}
         <section className="lg:col-span-7 bg-white rounded-3xl shadow-[0_4px_16px_rgba(0,0,0,0.03)] border border-[#e7e5e4] p-6 sm:p-8 flex flex-col justify-between overflow-hidden">
-          {/* Header with Word Count & Status */}
-          <div className="flex items-center justify-between pb-4 border-b border-[#f0efed] mb-4">
+          {/* Header with Word Count & Clear Action */}
+          <div className="flex items-center justify-between gap-3 pb-4 border-b border-[#f0efed] mb-4">
             <div className="flex items-center gap-2.5">
               <h2 className="font-serif font-light text-[22px] text-[#0c0a09] tracking-[-0.02em]">
                 Spoken Transcript
               </h2>
             </div>
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-2 shrink-0">
               <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#0c0a09] bg-[#f0efed] px-3 py-1 rounded-full tabular-nums">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#0c0a09]" />
                 {wordCount} {wordCount === 1 ? 'Word' : 'Words'}
               </span>
+
+              <button
+                type="button"
+                onClick={onClear}
+                disabled={!hasAnswer}
+                className="h-7.5 px-3 rounded-full bg-white hover:bg-[#fafafa] border border-[#d6d3d1] hover:border-[#0c0a09] text-[11.5px] font-medium text-[#292524] hover:text-[#0c0a09] transition-all inline-flex items-center gap-1.5 active:scale-[0.98] disabled:opacity-40 disabled:pointer-events-none cursor-pointer"
+                title="Clear recorded transcript"
+                aria-label="Clear recorded transcript"
+              >
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                <span>Clear Answer</span>
+              </button>
             </div>
           </div>
 

@@ -1,0 +1,44 @@
+{
+    "name": "Science Annual Examination (Class V)",
+    "description": "DPS Bangalore North Academic Session 2025-2026",
+    "subject": "Science",
+    "grade": 5,
+    "duration": 60,
+    "max_marks": 50,
+    "filename": "Science_Annual_Exam.pdf",
+    "questions": [
+        {
+            "question_number": 1,
+            "type": "objective",
+            "heading": "I. MULTIPLE CHOICE QUESTIONS",
+            "question": "Ravi wants to load a heavy box into a truck. Why does using a ramp make his work easier?",
+            "options": [
+                {
+                    "label": "A",
+                    "text": "It increases the weight of the box."
+                },
+                {
+                    "label": "B",
+                    "text": "It reduces the distance moved."
+                },
+                {
+                    "label": "C",
+                    "text": "It reduces the force needed."
+                },
+                {
+                    "label": "D",
+                    "text": "It changes the shape of the box."
+                }
+            ],
+            "marks": 1
+        },
+        {
+            "question_number": 2,
+            "type": "subjective",
+            "heading": "II. ANSWER THE FOLLOWING",
+            "question": "Why is a screw better than a nail?",
+            "options": [],
+            "marks": 2
+        }
+    ]
+}

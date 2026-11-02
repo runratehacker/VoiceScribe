@@ -18,11 +18,11 @@ app.use('/uploads', express.static('uploads'));
 app.use(express.urlencoded({ extended: true }));
 
 // API endpoints 
-import formRouter from './routes/FormRoute.js';
-app.use('/api', formRouter);
+import paperRouter from './routes/paperRoute.js';
+app.use('/api', paperRouter);
 
 
-import liveRouter from "./routes/LiveRoute.js";
+import liveRouter from "./routes/liveRoute.js";
 app.use("/api", liveRouter);
 
 import authRouter from './routes/authRoute.js';

@@ -371,34 +371,5 @@ export async function buildPaperPdf(payload = {}) {
     return { pdfBytes, filename, outputPath };
 }
 
-/**
- * Express Controller that reads the paper + questions payload from `req.body`,
- * generates the fillable PDF, saves it to templatePDFs, and returns the PDF or JSON metadata.
- */
-export const generatePaper = async (req, res) => {
-    try {
-        const { pdfBytes, filename, outputPath } = await buildPaperPdf(req.body);
-
-        // If client requested direct PDF download (?download=true), stream the PDF binary
-        if (req.query?.download === 'true') {
-            res.setHeader('Content-Type', 'application/pdf');
-            res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-            return res.status(200).send(Buffer.from(pdfBytes));
-        }
-
-        return res.status(200).json({
-            message: 'Paper PDF generated successfully',
-            filename,
-            outputPath,
-        });
-    } catch (error) {
-        console.error('Error generating universal paper PDF:', error);
-        return res.status(500).json({
-            message: 'Failed to generate paper PDF',
-            error: error.message,
-        });
-    }
-};
-
-export default generatePaper;
+export default buildPaperPdf;
 

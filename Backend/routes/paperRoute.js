@@ -1,6 +1,6 @@
 import express from 'express';
 import { getQuestions, getFormController, getAllPapers } from '../controllers/formController.js';
-import { generatePaper } from '../template/generatePaper.js'
+import generatePaper from '../controllers/generateController.js';
 
 const router = express.Router();
 

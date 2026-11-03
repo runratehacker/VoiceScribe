@@ -8,7 +8,7 @@ const generatePaper = async (req, res) => {
     try {
         const { pdfBytes, filename, outputPath } = await buildPaperPdf(req.body);
 
-        let { data, error } = await supabase.storage.from('papers').upload(`public/${filename}.pdf`,
+        let { data, error } = await supabase.storage.from('papers').upload(`public/${filename}`,
             Buffer.from(pdfBytes), {
             contentType: 'application/pdf',
             upsert: true,
@@ -22,7 +22,7 @@ const generatePaper = async (req, res) => {
             });
         }
 
-        let { data: data1, error: error1 } = await supabase.storage.from('papers').createSignedUrl(`public/${filename}.pdf`, 60, {
+        let { data: data1, error: error1 } = await supabase.storage.from('papers').createSignedUrl(`public/${filename}`, 60, {
             download: true
         })
 

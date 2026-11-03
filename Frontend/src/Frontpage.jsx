@@ -87,27 +87,28 @@ const VoiceAssistantUI = () => {
 
   const handleDownload = async () => {
     try {
-      const payloadFields = { ...formFields };
-      if (String(formid) === '2') {
-        if (payloadFields.answer_1 && !payloadFields.question_1) payloadFields.question_1 = payloadFields.answer_1;
-        if (payloadFields.answer_2 && !payloadFields.question_2) payloadFields.question_2 = payloadFields.answer_2;
-        if (payloadFields.answer_3 && !payloadFields.answer_9) payloadFields.answer_9 = payloadFields.answer_3;
-        if (payloadFields.answer_4 && !payloadFields.answer_10) payloadFields.answer_10 = payloadFields.answer_4;
-      }
+      const payloadFields = {};
+      Object.keys(formFields || {}).forEach((key) => {
+        payloadFields[key] = {
+          value: formFields[key]?.value ?? ''
+        };
+      });
 
       const response = await axios.post(`${API_BASE_URL}/api/download/${formid}`, {
         formFields: payloadFields
-      }, {
-        responseType: 'blob'
       });
 
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', 'filled_worksheet.pdf');
-      document.body.appendChild(link);
-      link.click();
-      link.parentNode.removeChild(link);
+      if (response.data?.signedUrl) {
+        const link = document.createElement('a');
+        link.href = response.data.signedUrl;
+        link.setAttribute(
+          'download',
+          response.data.filename ? `filled_${response.data.filename}` : 'filled_worksheet.pdf'
+        );
+        document.body.appendChild(link);
+        link.click();
+        link.parentNode.removeChild(link);
+      }
     } catch (error) {
       console.error("Error downloading PDF:", error);
       alert("Failed to download PDF.");

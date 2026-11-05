@@ -49,23 +49,23 @@ const Login = () => {
 
   return (
     <div className="min-h-dvh w-full flex flex-col justify-between bg-[#f5f5f5] text-[#292524] relative overflow-hidden font-sans selection:bg-[#292524] selection:text-white">
-      {/* Atmospheric Pastel Gradient Orbs (ElevenLabs signature) */}
+
       <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
-        {/* Top-right Lavender / Sky orb */}
+
         <div
           className="absolute -top-24 -right-24 w-96 h-96 sm:w-120 sm:h-120 rounded-full opacity-40 blur-3xl"
           style={{
             background: 'radial-gradient(circle at center, #c8b8e0 0%, #a8c8e8 45%, transparent 75%)'
           }}
         />
-        {/* Bottom-left Peach / Mint orb */}
+
         <div
           className="absolute -bottom-24 -left-24 w-96 h-96 sm:w-125 sm:h-125 rounded-full opacity-35 blur-3xl"
           style={{
             background: 'radial-gradient(circle at center, #f4c5a8 0%, #a7e5d3 45%, transparent 75%)'
           }}
         />
-        {/* Subtle center-card Rose glow */}
+
         <div
           className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 rounded-full opacity-20 blur-2xl"
           style={{
@@ -77,7 +77,7 @@ const Login = () => {
       {/* Top Navigation */}
       <header className="w-full max-w-6xl mx-auto px-6 h-16 flex items-center justify-between z-10 shrink-0">
         <div className="flex items-center gap-2.5">
-          {/* Minimalist Audio Wave Monogram */}
+
           <div className="flex items-center gap-1 h-4 px-1" aria-hidden="true">
             <span className="w-0.5 h-3 bg-[#292524] rounded-full" />
             <span className="w-0.5 h-4.5 bg-[#292524] rounded-full" />
@@ -99,12 +99,12 @@ const Login = () => {
       <main className="flex-1 flex flex-col items-center justify-center p-4 sm:p-6 relative z-10">
         <div className="w-full max-w-105 bg-white rounded-[20px] sm:rounded-3xl border border-[#e7e5e4] shadow-[0_4px_24px_rgba(0,0,0,0.03)] p-7 sm:p-10 relative">
 
-          {/* Eyebrow Label (Restrained: 1 on page) */}
+
           <span className="text-[11px] font-medium tracking-[0.16em] uppercase text-[#777169] mb-2.5 block">
             ACCOUNT ACCESS
           </span>
 
-          {/* Editorial Display Headline (Waldenburg Light 300 signature) */}
+
           <h1 className="font-serif font-light text-[34px] sm:text-[38px] text-[#0c0a09] tracking-tight leading-[1.12] mb-2.5">
             Welcome back.
           </h1>
@@ -113,7 +113,7 @@ const Login = () => {
             Enter your credentials to access your voice workspace.
           </p>
 
-          {/* Error Notification */}
+
           {error && (
             <div
               role="alert"
@@ -183,7 +183,7 @@ const Login = () => {
               </div>
             </div>
 
-            {/* Primary Action Button (Near-black Ink Pill) */}
+
             <button
               type="submit"
               disabled={loading}
@@ -200,7 +200,7 @@ const Login = () => {
             </button>
           </form>
 
-          {/* Secondary Link */}
+
           <div className="mt-8 pt-6 border-t border-[#f0efed] text-center">
             <p className="text-[13px] text-[#777169]">
               Need an account?{' '}

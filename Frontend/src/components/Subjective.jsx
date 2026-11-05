@@ -34,12 +34,12 @@ const Subjective = ({
 
   return (
     <div className="flex-1 w-full mx-auto flex flex-col mb-4 min-h-0">
-      {/* Asymmetric Studio Split Layout (ElevenLabs Editorial Studio) */}
+
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 flex-1 min-h-0 items-stretch">
 
-        {/* Left Column (5 cols): Question Prompt Reading Room */}
+
         <section className="lg:col-span-5 bg-white rounded-2xl shadow-[0_4px_16px_rgba(0,0,0,0.03)] border border-[#e7e5e4] p-7 sm:p-10 flex flex-col justify-between relative overflow-hidden">
-          {/* Subtle atmospheric corner gradient bloom */}
+
           <div
             className="absolute -top-20 -left-20 w-64 h-64 rounded-full opacity-30 blur-3xl pointer-events-none"
             style={{ background: 'radial-gradient(circle, #f4c5a8 0%, #a7e5d3 50%, transparent 75%)' }}
@@ -47,7 +47,7 @@ const Subjective = ({
           />
 
           <div className="relative z-10 flex flex-col">
-            {/* Question Meta Badge Bar */}
+
             <div className="flex items-center justify-between pb-5 border-b border-[#f0efed] mb-7 gap-3 flex-wrap">
               <div className="flex items-center gap-3">
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold tracking-[0.08em] uppercase bg-[#f0efed] text-[#0c0a09]">
@@ -77,13 +77,13 @@ const Subjective = ({
               </p>
             )}
 
-            {/* Display Question Headline (Waldenburg Light 300 signature) */}
+
             <h1 className="font-serif font-light text-2xl sm:text-3xl lg:text-[32px] text-[#0c0a09] leading-[1.22] tracking-tight pb-1 mb-6">
               <LatexRenderer text={question || label} />
             </h1>
           </div>
 
-          {/* Voice Input Instructions Footer */}
+
           <div className="relative z-10 pt-5 border-t border-[#f0efed] flex flex-col gap-1 text-[13px] text-[#777169]">
             <div className="flex items-center gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-[#0c0a09]" />
@@ -95,9 +95,9 @@ const Subjective = ({
           </div>
         </section>
 
-        {/* Right Column (7 cols): Spoken Answer Workspace & Speech Canvas */}
+
         <section className="lg:col-span-7 bg-white rounded-3xl shadow-[0_4px_16px_rgba(0,0,0,0.03)] border border-[#e7e5e4] p-6 sm:p-8 flex flex-col justify-between overflow-hidden">
-          {/* Header with Word Count & Clear Action */}
+
           <div className="flex items-center justify-between gap-3 pb-4 border-b border-[#f0efed] mb-4">
             <div className="flex items-center gap-2.5">
               <h2 className="font-serif font-light text-[22px] text-[#0c0a09] tracking-[-0.02em]">
@@ -126,7 +126,7 @@ const Subjective = ({
             </div>
           </div>
 
-          {/* Interactive Speech Canvas */}
+
           <div
             ref={answerContainerRef}
             className="flex-1 w-full rounded-2xl bg-[#fafafa] border border-[#e7e5e4] p-6 sm:p-8 overflow-y-auto scrollbar-none min-h-70"
@@ -138,7 +138,7 @@ const Subjective = ({
               </div>
             ) : (
               <div className="w-full h-full flex flex-col items-center justify-center text-center py-12">
-                {/* ElevenLabs voice-icon-circular */}
+
                 <div className="w-12 h-12 rounded-full bg-white shadow-2xs border border-[#e7e5e4] text-[#292524] flex items-center justify-center mb-4">
                   <div className="flex items-center gap-1" aria-hidden="true">
                     <span className="w-0.5 h-3.5 bg-[#292524] rounded-full" />
@@ -156,7 +156,7 @@ const Subjective = ({
             )}
           </div>
 
-          {/* Transcript Footer Status */}
+
           <div className="pt-4 border-t border-[#f0efed] mt-4 flex items-center justify-between text-[12.5px] text-[#777169]">
             <span>Continuous voice capture</span>
             <span className="text-[#0c0a09] font-medium">Synced</span>

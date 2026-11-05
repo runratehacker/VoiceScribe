@@ -22,12 +22,12 @@ const Objective = ({
 
   return (
     <div className="flex-1 w-full mx-auto flex flex-col mb-4 min-h-0">
-      {/* Asymmetric Studio Split Layout Editorial Studio */}
+
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 flex-1 min-h-0 items-stretch">
 
-        {/* Left Column (7 cols): Question Prompt Reading Room */}
+
         <section className="lg:col-span-7 bg-white rounded-2xl shadow-[0_4px_16px_rgba(0,0,0,0.03)] border border-[#e7e5e4] p-7 sm:p-10 flex flex-col justify-between relative overflow-hidden">
-          {/* Subtle atmospheric corner gradient bloom */}
+
           <div
             className="absolute -top-20 -left-20 w-64 h-64 rounded-full opacity-30 blur-3xl pointer-events-none"
             style={{ background: 'radial-gradient(circle, #c8b8e0 0%, #a8c8e8 50%, transparent 75%)' }}
@@ -35,7 +35,7 @@ const Objective = ({
           />
 
           <div className="relative z-10 flex flex-col">
-            {/* Question Meta Badge Bar */}
+
             <div className="flex items-center justify-between pb-5 border-b border-[#f0efed] mb-7 gap-3 flex-wrap">
               <div className="flex items-center gap-3">
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold tracking-[0.08em] uppercase bg-[#f0efed] text-[#0c0a09]">
@@ -65,13 +65,13 @@ const Objective = ({
               </p>
             )}
 
-            {/* Display Question Headline (Waldenburg Light 300 signature) */}
+
             <h1 className="font-serif font-light text-2xl sm:text-3xl lg:text-[34px] text-[#0c0a09] leading-[1.2] tracking-tight pb-1 mb-6">
               <LatexRenderer text={question || label} />
             </h1>
           </div>
 
-          {/* Voice Input Prompt Tip */}
+
           <div className="relative z-10 pt-5 border-t border-[#f0efed] flex items-center justify-between text-[13px] text-[#777169]">
             <div className="flex items-center gap-2.5">
               <span className="w-1.5 h-1.5 rounded-full bg-[#0c0a09]" />
@@ -81,9 +81,9 @@ const Objective = ({
           </div>
         </section>
 
-        {/* Right Column (5 cols): Interactive Options Column */}
+
         <section className="lg:col-span-5 bg-white rounded-2xl shadow-[0_4px_16px_rgba(0,0,0,0.03)] border border-[#e7e5e4] p-7 sm:p-9 flex flex-col justify-between relative overflow-hidden">
-          {/* Subtle atmospheric bottom-right gradient bloom */}
+
           <div
             className="absolute -bottom-24 -right-24 w-64 h-64 rounded-full opacity-25 blur-3xl pointer-events-none"
             style={{ background: 'radial-gradient(circle, #f4c5a8 0%, #a7e5d3 50%, transparent 75%)' }}
@@ -113,7 +113,7 @@ const Objective = ({
             )}
           </div>
 
-          {/* Balanced Vertical Stack of Tactile Option Cards */}
+
           <div className="relative z-10 flex-1 flex flex-col justify-center gap-3.5 overflow-y-auto py-1 scrollbar-none">
             {options.map((option, index) => {
               const trimmedValue = value ? String(value).trim().toUpperCase() : "";
@@ -139,7 +139,7 @@ const Objective = ({
                     }`}
                 >
                   <div className="flex items-center gap-4 min-w-0 flex-1">
-                    {/* Option Letter Circular Plate */}
+
                     <span
                       className={`w-7 h-7 rounded-full flex items-center justify-center font-serif text-[13px] shrink-0 transition-colors ${isSelected
                         ? 'bg-white text-[#0c0a09] font-medium'
@@ -149,7 +149,7 @@ const Objective = ({
                       {option.label}
                     </span>
 
-                    {/* Option Content with LaTeX Support */}
+
                     <span
                       className={`text-[16px] sm:text-[17px] leading-snug whitespace-normal flex-1 ${isSelected ? 'text-white font-medium' : 'text-[#0c0a09] font-normal'
                         }`}
@@ -158,7 +158,7 @@ const Objective = ({
                     </span>
                   </div>
 
-                  {/* Right Tactile Radio Indicator */}
+
                   <span
                     className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 transition-all ${isSelected
                       ? 'bg-white text-[#0c0a09]'
@@ -179,7 +179,7 @@ const Objective = ({
             })}
           </div>
 
-          {/* Quick Status Footer */}
+
           <div className="relative z-10 pt-5 border-t border-[#f0efed] mt-5 flex items-center justify-between text-[13px] text-[#777169] shrink-0">
             <span>Say &ldquo;Option A&rdquo; or click to choose</span>
             <span className="inline-flex items-center gap-1.5 text-[#0c0a09] font-medium">

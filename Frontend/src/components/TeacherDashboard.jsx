@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { API_BASE_URL } from '../config';
+import LatexRenderer from './LatexRenderer';
 
 const DEFAULT_OPTIONS = () => [
   { label: 'A', text: '' },
@@ -82,6 +83,7 @@ const TeacherDashboard = () => {
   // UI states
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [showJsonPreview, setShowJsonPreview] = useState(false);
+  const [formattingLatex, setFormattingLatex] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [statusMessage, setStatusMessage] = useState({ type: '', text: '' });
   const [generatedResult, setGeneratedResult] = useState(null);
@@ -289,6 +291,51 @@ const TeacherDashboard = () => {
     return null;
   };
 
+  const handleFormatLatex = async () => {
+
+    setStatusMessage({ type: '', text: '' });
+    setFormattingLatex(true);
+
+    try {
+
+      const latexRes = await axios.post(`${API_BASE_URL}/api/format-latex`, requestPayload);
+      const formattedPayload = latexRes.data || requestPayload;
+
+      if (Array.isArray(formattedPayload.questions)) {
+        setQuestions(
+          formattedPayload.questions.map((q, idx) => ({
+            ...q,
+            question_number: idx + 1,
+            options: q.type === 'objective' ? q.options || DEFAULT_OPTIONS() : [],
+          }))
+        );
+      }
+
+      setStatusMessage({
+        type: 'success',
+        text: 'Questions converted to LaTeX format.',
+      });
+
+      return formattedPayload;
+
+    } catch (error) {
+
+      console.error('Error formatting LaTeX:', error);
+
+      setStatusMessage({
+        type: 'error',
+        text: error.response?.data?.message || 'Failed to format questions into LaTeX.',
+      });
+
+      return null;
+
+    } finally {
+
+      setFormattingLatex(false);
+
+    }
+  };
+
   const handleGeneratePaper = async (e) => {
     e.preventDefault();
     setStatusMessage({ type: '', text: '' });
@@ -302,11 +349,30 @@ const TeacherDashboard = () => {
 
     setSubmitting(true);
     try {
-      const response = await axios.post(`${API_BASE_URL}/api/generate`, requestPayload);
+      // 1. Convert questions & options into proper LaTeX format via Gemini Flash endpoint
+      let finalPayload = requestPayload;
+      try {
+        const latexRes = await axios.post(`${API_BASE_URL}/api/format-latex`, requestPayload);
+        if (latexRes.data && Array.isArray(latexRes.data.questions)) {
+          finalPayload = latexRes.data;
+          setQuestions(
+            finalPayload.questions.map((q, idx) => ({
+              ...q,
+              question_number: idx + 1,
+              options: q.type === 'objective' ? q.options || DEFAULT_OPTIONS() : [],
+            }))
+          );
+        }
+      } catch (latexErr) {
+        console.warn('LaTeX formatting step failed, proceeding with original payload:', latexErr);
+      }
+
+      // 2. Send the LaTeX-formatted payload to generate the paper PDF
+      const response = await axios.post(`${API_BASE_URL}/api/generate`, finalPayload);
       setGeneratedResult(response.data);
       setStatusMessage({
         type: 'success',
-        text: response.data?.message || 'Paper PDF generated and saved to storage.',
+        text: response.data?.message || 'Paper formatted to LaTeX and PDF saved to storage.',
       });
     } catch (error) {
       console.error('Error generating paper:', error);
@@ -671,8 +737,8 @@ const TeacherDashboard = () => {
                               type="button"
                               onClick={() => updateQuestionField(qIndex, 'type', 'objective')}
                               className={`h-7 px-3.5 rounded-full text-[12.5px] font-medium transition-all ${isObjective
-                                  ? 'bg-[#292524] text-white'
-                                  : 'text-[#4e4e4e] hover:text-[#0c0a09]'
+                                ? 'bg-[#292524] text-white'
+                                : 'text-[#4e4e4e] hover:text-[#0c0a09]'
                                 }`}
                             >
                               Objective (MCQ)
@@ -681,8 +747,8 @@ const TeacherDashboard = () => {
                               type="button"
                               onClick={() => updateQuestionField(qIndex, 'type', 'subjective')}
                               className={`h-7 px-3.5 rounded-full text-[12.5px] font-medium transition-all ${!isObjective
-                                  ? 'bg-[#292524] text-white'
-                                  : 'text-[#4e4e4e] hover:text-[#0c0a09]'
+                                ? 'bg-[#292524] text-white'
+                                : 'text-[#4e4e4e] hover:text-[#0c0a09]'
                                 }`}
                             >
                               Subjective
@@ -752,8 +818,8 @@ const TeacherDashboard = () => {
                                 type="button"
                                 onClick={() => updateQuestionField(qIndex, 'heading', preset)}
                                 className={`text-[11.5px] px-2.5 py-1 rounded-full border transition-all ${q.heading === preset
-                                    ? 'bg-[#292524] text-white border-[#292524]'
-                                    : 'bg-white text-[#4e4e4e] border-[#e7e5e4] hover:border-[#0c0a09]'
+                                  ? 'bg-[#292524] text-white border-[#292524]'
+                                  : 'bg-white text-[#4e4e4e] border-[#e7e5e4] hover:border-[#0c0a09]'
                                   }`}
                               >
                                 {preset}
@@ -786,8 +852,8 @@ const TeacherDashboard = () => {
                                 type="button"
                                 onClick={() => updateQuestionField(qIndex, 'marks', markVal)}
                                 className={`h-7 px-2.5 rounded-full text-[12px] font-medium tabular-nums border transition-all ${Number(q.marks) === markVal
-                                    ? 'bg-[#292524] text-white border-[#292524]'
-                                    : 'bg-white text-[#4e4e4e] border-[#e7e5e4] hover:border-[#0c0a09]'
+                                  ? 'bg-[#292524] text-white border-[#292524]'
+                                  : 'bg-white text-[#4e4e4e] border-[#e7e5e4] hover:border-[#0c0a09]'
                                   }`}
                               >
                                 {markVal}M
@@ -818,6 +884,14 @@ const TeacherDashboard = () => {
                           className="w-full p-3.5 rounded-lg bg-white border border-[#d6d3d1] text-[15px] text-[#0c0a09] placeholder-[#777169]/70 outline-none focus:border-[#0c0a09] focus:ring-1 focus:ring-[#0c0a09] transition-all resize-y"
                           required
                         />
+                        {(q.question.includes('$') || q.question.includes('\\')) && (
+                          <div className="px-3.5 py-2 rounded-lg bg-white border border-[#e7e5e4] text-[14.5px] text-[#0c0a09]">
+                            <span className="text-[11.5px] font-semibold uppercase tracking-[0.06em] text-[#777169] mr-2">
+                              LaTeX Preview:
+                            </span>
+                            <LatexRenderer text={q.question} />
+                          </div>
+                        )}
                       </div>
 
                       {/* Row 4: Options Grid (Only for Objective Questions) */}
@@ -953,8 +1027,8 @@ const TeacherDashboard = () => {
               {statusMessage.text && (
                 <div
                   className={`relative z-10 p-4 rounded-xl border text-[13.5px] leading-relaxed ${statusMessage.type === 'error'
-                      ? 'bg-[#fef2f2] border-[#fecaca] text-[#dc2626]'
-                      : 'bg-white border-[#16a34a]/40 text-[#16a34a]'
+                    ? 'bg-[#fef2f2] border-[#fecaca] text-[#dc2626]'
+                    : 'bg-white border-[#16a34a]/40 text-[#16a34a]'
                     }`}
                 >
                   <p className="font-medium">{statusMessage.text}</p>
@@ -985,14 +1059,23 @@ const TeacherDashboard = () => {
               <div className="relative z-10 flex flex-col gap-2.5">
                 <button
                   type="submit"
-                  disabled={submitting}
+                  disabled={submitting || formattingLatex}
                   className="w-full h-11 px-6 rounded-full bg-[#292524] hover:bg-[#0c0a09] text-white text-[15px] font-medium transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:pointer-events-none active:scale-[0.98]"
                 >
                   {submitting ? (
-                    <span>Generating Paper...</span>
+                    <span>Formatting LaTeX & Generating...</span>
                   ) : (
                     <span>Generate Paper</span>
                   )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleFormatLatex}
+                  disabled={submitting || formattingLatex}
+                  className="w-full h-10 px-4 rounded-full bg-white border border-[#d6d3d1] hover:border-[#0c0a09] text-[#0c0a09] text-[13.5px] font-medium transition-all disabled:opacity-50 disabled:pointer-events-none active:scale-[0.98]"
+                >
+                  {formattingLatex ? 'Formatting to LaTeX...' : 'Format Math to LaTeX'}
                 </button>
 
                 <button

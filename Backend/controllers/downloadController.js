@@ -33,7 +33,9 @@ const downloadController = async (req, res) => {
         }
 
         if (Object.keys(textFieldsToConvert).length > 0 && process.env.GEMINI_API_KEY) {
+
             const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+
             const prompt = `
             Translate the following LaTeX answers into highly readable plain-text suitable for filling in a plain text PDF form field.
             Do not change any of the English words, only convert the LaTeX $...$ or $$...$$ blocks into readable ASCII text characters.
@@ -48,19 +50,19 @@ const downloadController = async (req, res) => {
                 const response = await ai.models.generateContent({
                     model: 'gemini-3.1-flash-lite',
                     contents: prompt,
+                    config: {
+                        responseMimeType: 'application/json',
+                    },
                 });
 
                 let responseText = response.text.trim();
-                if (responseText.startsWith('```json')) {
-                    responseText = responseText.substring(7, responseText.length - 3).trim();
-                } else if (responseText.startsWith('```')) {
-                    responseText = responseText.substring(3, responseText.length - 3).trim();
-                }
 
                 const translatedFields = JSON.parse(responseText);
+
                 for (const [key, val] of Object.entries(translatedFields)) {
                     fields[key] = val;
                 }
+
             } catch (llmError) {
                 console.error('LLM LaTeX Conversion Error:', llmError);
             }

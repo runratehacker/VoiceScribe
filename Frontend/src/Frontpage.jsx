@@ -1,19 +1,20 @@
 import React, { useState, useEffect, useRef } from 'react';
-import Header from '../components/Header';
-import VoiceFooter from '../components/VoiceFooter';
-import Objective from '../components/Objective';
-import Subjective from '../components/Subjective';
-import ExamCompletedScreen from '../components/ExamCompletedScreen';
-import { useAudioPlayback } from '../hooks/useAudioPlayback';
-import { useGeminiLive } from '../hooks/useGeminiLive';
-import { useAudioRecorder } from '../hooks/useAudioRecorder';
-import { useFormFields } from '../hooks/useFormFields';
-import { useQuestionNavigation } from '../hooks/useQuestionNavigation';
+import Header from './components/Header';
+import VoiceFooter from './components/VoiceFooter';
+import Objective from './components/Objective';
+import Subjective from './components/Subjective';
+import ExamCompletedScreen from './components/ExamCompletedScreen';
+import { useAudioPlayback } from './hooks/useAudioPlayback';
+import { useGeminiLive } from './hooks/useGeminiLive';
+import { useAudioRecorder } from './hooks/useAudioRecorder';
+import { useFormFields } from './hooks/useFormFields';
+import { useQuestionNavigation } from './hooks/useQuestionNavigation';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
-import { API_BASE_URL } from '../config';
+import { API_BASE_URL } from './config';
 
-const ExamSession = () => {
+
+const VoiceAssistantUI = () => {
   const { formid } = useParams();
   const { formFields, onFieldFilled, onFieldReset } = useFormFields(formid);
 
@@ -171,7 +172,7 @@ const ExamSession = () => {
   return (
     <div className="min-h-dvh w-full bg-[#f5f5f5] text-[#292524] p-4 sm:p-6 flex flex-col justify-between font-sans relative overflow-x-hidden selection:bg-[#292524] selection:text-white">
 
-      {/* Atmospheric Pastel Gradient Orbs */}
+      {/* Atmospheric Pastel Gradient Orbs (ElevenLabs signature) */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
         <div
           className="absolute -top-28 right-1/4 w-145 h-145 rounded-full opacity-30 blur-3xl"
@@ -293,5 +294,4 @@ const ExamSession = () => {
   );
 };
 
-export default ExamSession;
-
+export default VoiceAssistantUI;

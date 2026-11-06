@@ -5,6 +5,8 @@
     "grade": 5,
     "duration": 60,
     "max_marks": 50,
+    "start_date": "2026-11-10T09:00:00.000Z",
+    "end_date": "2026-11-10T12:00:00.000Z",
     "filename": "Science_Annual_Exam.pdf",
     "questions": [
         {

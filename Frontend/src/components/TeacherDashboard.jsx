@@ -67,6 +67,16 @@ const TeacherDashboard = () => {
   const [duration, setDuration] = useState(60);
   const [maxMarks, setMaxMarks] = useState(50);
   const [customFilename, setCustomFilename] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+
+  // End date must not precede start date
+  const dateRangeError = useMemo(() => {
+    if (startDate && endDate && new Date(endDate) < new Date(startDate)) {
+      return 'End date must be on or after the start date.';
+    }
+    return '';
+  }, [startDate, endDate]);
 
   // Questions list state matching reqExample.json
   const [questions, setQuestions] = useState([
@@ -126,6 +136,8 @@ const TeacherDashboard = () => {
       duration: Number(duration) || 60,
       max_marks: Number(maxMarks) || allocatedMarks || 0,
       filename: resolvedFilename,
+      start_date: startDate ? new Date(startDate).toISOString() : null,
+      end_date: endDate ? new Date(endDate).toISOString() : null,
       questions: questions.map((q, idx) => ({
         question_number: idx + 1,
         type: q.type,
@@ -141,7 +153,7 @@ const TeacherDashboard = () => {
         marks: Number(q.marks) || 1,
       })),
     };
-  }, [name, description, subject, grade, duration, maxMarks, allocatedMarks, resolvedFilename, questions]);
+  }, [name, description, subject, grade, duration, maxMarks, allocatedMarks, resolvedFilename, startDate, endDate, questions]);
 
   // Question manipulation handlers
   const addQuestion = (type = 'objective') => {
@@ -257,6 +269,8 @@ const TeacherDashboard = () => {
     setDuration(60);
     setMaxMarks(50);
     setCustomFilename('');
+    setStartDate('');
+    setEndDate('');
     setQuestions([
       {
         question_number: 1,
@@ -274,6 +288,9 @@ const TeacherDashboard = () => {
   const validateForm = () => {
     if (!name.trim()) return 'Please enter a paper title.';
     if (!subject.trim()) return 'Please enter a subject.';
+    if (!startDate) return 'Please select a start date for the paper.';
+    if (!endDate) return 'Please select an end date for the paper.';
+    if (dateRangeError) return dateRangeError;
     if (questions.length === 0) return 'Please add at least one question.';
 
     for (let i = 0; i < questions.length; i++) {
@@ -527,7 +544,7 @@ const TeacherDashboard = () => {
         </section>
 
 
-        <form onSubmit={handleGeneratePaper} className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        <form autoComplete="off" onSubmit={handleGeneratePaper} className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
 
           <div className="lg:col-span-8 flex flex-col gap-6">
 
@@ -658,6 +675,50 @@ const TeacherDashboard = () => {
                     required
                   />
                 </div>
+
+                {/* Availability Window */}
+                <div className="sm:col-span-6 flex flex-col gap-2">
+                  <label htmlFor="paper-start-date" className="text-[14px] font-medium text-[#292524]">
+                    Start Date
+                  </label>
+                  <input
+                    id="paper-start-date"
+                    type="datetime-local"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    aria-describedby="paper-date-help"
+                    className="w-full h-11 px-4 rounded-lg bg-white border border-[#d6d3d1] text-[15px] text-[#0c0a09] tabular-nums outline-none focus:border-[#0c0a09] focus:ring-1 focus:ring-[#0c0a09] transition-all"
+                    required
+                  />
+                </div>
+
+                <div className="sm:col-span-6 flex flex-col gap-2">
+                  <label htmlFor="paper-end-date" className="text-[14px] font-medium text-[#292524]">
+                    End Date
+                  </label>
+                  <input
+                    id="paper-end-date"
+                    type="datetime-local"
+                    value={endDate}
+                    min={startDate || undefined}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    aria-invalid={Boolean(dateRangeError)}
+                    aria-describedby="paper-date-help"
+                    className={`w-full h-11 px-4 rounded-lg bg-white border text-[15px] text-[#0c0a09] tabular-nums outline-none focus:ring-1 transition-all ${
+                      dateRangeError
+                        ? 'border-[#b91c1c] focus:border-[#b91c1c] focus:ring-[#b91c1c]'
+                        : 'border-[#d6d3d1] focus:border-[#0c0a09] focus:ring-[#0c0a09]'
+                    }`}
+                    required
+                  />
+                </div>
+
+                <p
+                  id="paper-date-help"
+                  className={`sm:col-span-12 -mt-2 text-[12.5px] ${dateRangeError ? 'text-[#b91c1c]' : 'text-[#777169]'}`}
+                >
+                  {dateRangeError || 'Students can attempt the paper only within this window.'}
+                </p>
 
                 {/* Filename */}
                 <div className="sm:col-span-12 flex flex-col gap-2">

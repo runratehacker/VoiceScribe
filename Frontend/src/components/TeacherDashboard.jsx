@@ -54,14 +54,6 @@ const HEADING_PRESETS = [
 
 const MARK_PRESETS = [1, 2, 3, 5];
 
-const DEFAULT_STUDENTS = [
-  { id: '1', name: 'Aarav Sharma' },
-  { id: '2', name: 'Diya Nair' },
-  { id: '3', name: 'Rohan Verma' },
-  { id: '4', name: 'Ananya Iyer' },
-  { id: '5', name: 'Kabir Mehta' },
-];
-
 const formatFileSize = (bytes) => {
   if (!bytes || bytes <= 0) return '0 KB';
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
@@ -119,54 +111,84 @@ const TeacherDashboard = () => {
   const fileInputRef = useRef(null);
   const [uploadedFile, setUploadedFile] = useState(null);
   const [isDraggingFile, setIsDraggingFile] = useState(false);
-  const [availablePapers, setAvailablePapers] = useState([
-    {
-      id: 'sample-1',
-      name: SAMPLE_PAPER.name,
-      subject: SAMPLE_PAPER.subject,
-      grade: SAMPLE_PAPER.grade,
-      duration: SAMPLE_PAPER.duration,
-      max_marks: SAMPLE_PAPER.max_marks,
-    },
-  ]);
-  const [availableStudents, setAvailableStudents] = useState(DEFAULT_STUDENTS);
-  const [uploadPaperId, setUploadPaperId] = useState('sample-1');
-  const [uploadStudentId, setUploadStudentId] = useState(DEFAULT_STUDENTS[0].id);
+  const [availablePapers, setAvailablePapers] = useState([]);
+  const [loadingPapers, setLoadingPapers] = useState(true);
+  const [availableStudents, setAvailableStudents] = useState([]);
+  const [uploadPaperId, setUploadPaperId] = useState('');
+  const [uploadStudentId, setUploadStudentId] = useState('');
   const [uploadMarksObtained, setUploadMarksObtained] = useState('');
   const [uploadingPaper, setUploadingPaper] = useState(false);
   const [uploadStatus, setUploadStatus] = useState({ type: '', text: '' });
   const [uploadedEvaluatedList, setUploadedEvaluatedList] = useState([]);
 
+  const fetchAvailablePapers = async () => {
+    setLoadingPapers(true);
+    try {
+      const res = await axios.get(`${API_BASE_URL}/api/papers`);
+      if (Array.isArray(res.data)) {
+        setAvailablePapers(res.data);
+        setUploadPaperId((prev) => {
+          const exists = res.data.some((p) => String(p.id) === String(prev));
+          return exists ? String(prev) : '';
+        });
+      } else {
+        setAvailablePapers([]);
+        setUploadPaperId('');
+      }
+    } catch (err) {
+      console.error('Failed to fetch available papers:', err);
+      setAvailablePapers([]);
+      setUploadPaperId('');
+    } finally {
+      setLoadingPapers(false);
+    }
+  };
+
+  const fetchAvailableStudents = async () => {
+    try {
+      const stuRes = await axios.get(`${API_BASE_URL}/api/students`);
+      if (Array.isArray(stuRes.data)) {
+        const normalizedStudents = stuRes.data.map((s) => ({
+          id: String(s.id),
+          name: s.name || s.Username || s.username || `Student #${s.id}`,
+        }));
+        setAvailableStudents(normalizedStudents);
+      } else {
+        setAvailableStudents([]);
+      }
+    } catch (err) {
+      console.error('Failed to fetch available students:', err);
+      setAvailableStudents([]);
+    }
+  };
+
   // Fetch existing papers & available students from backend
   useEffect(() => {
     let isMounted = true;
     const fetchInitialData = async () => {
+      setLoadingPapers(true);
       try {
         const res = await axios.get(`${API_BASE_URL}/api/papers`);
-        if (isMounted && Array.isArray(res.data) && res.data.length > 0) {
-          setAvailablePapers((prev) => {
-            const existingIds = new Set(res.data.map((p) => String(p.id)));
-            const localOnly = prev.filter((p) => !existingIds.has(String(p.id)));
-            return [...res.data, ...localOnly];
-          });
-          setUploadPaperId(String(res.data[0].id));
+        if (isMounted && Array.isArray(res.data)) {
+          setAvailablePapers(res.data);
         }
-      } catch {
-        // Keep default sample paper when backend is offline
+      } catch (err) {
+        console.error('Failed to fetch available papers:', err);
+      } finally {
+        if (isMounted) setLoadingPapers(false);
       }
 
       try {
         const stuRes = await axios.get(`${API_BASE_URL}/api/students`);
-        if (isMounted && Array.isArray(stuRes.data) && stuRes.data.length > 0) {
+        if (isMounted && Array.isArray(stuRes.data)) {
           const normalizedStudents = stuRes.data.map((s) => ({
             id: String(s.id),
             name: s.name || s.Username || s.username || `Student #${s.id}`,
           }));
           setAvailableStudents(normalizedStudents);
-          setUploadStudentId(normalizedStudents[0].id);
         }
-      } catch {
-        // Keep default available students list
+      } catch (err) {
+        console.error('Failed to fetch students:', err);
       }
     };
     fetchInitialData();
@@ -174,6 +196,14 @@ const TeacherDashboard = () => {
       isMounted = false;
     };
   }, []);
+
+  // Refresh available papers and students when switching to the Upload Paper tab
+  useEffect(() => {
+    if (activeView === 'upload') {
+      fetchAvailablePapers();
+      fetchAvailableStudents();
+    }
+  }, [activeView]);
 
   const handleLogout = () => {
     logout();
@@ -469,17 +499,11 @@ const TeacherDashboard = () => {
         text: response.data?.message || 'Paper formatted to LaTeX and PDF saved to storage.',
       });
 
-      // Also register in availablePapers so teacher can immediately grade it
-      const newPaperEntry = {
-        id: response.data?.paperId || `local-${Date.now()}`,
-        name: finalPayload.name,
-        subject: finalPayload.subject,
-        grade: finalPayload.grade,
-        duration: finalPayload.duration,
-        max_marks: finalPayload.max_marks,
-        questions: finalPayload.questions,
-      };
-      setAvailablePapers((prev) => [newPaperEntry, ...prev]);
+      // Refresh available papers from database so teacher can immediately select it
+      await fetchAvailablePapers();
+      if (response.data?.paperId) {
+        setUploadPaperId(String(response.data.paperId));
+      }
     } catch (error) {
       console.error('Error generating paper:', error);
       setStatusMessage({
@@ -499,13 +523,12 @@ const TeacherDashboard = () => {
   // ─────────────────────────────────────────────
   const selectedUploadPaper = useMemo(
     () =>
-      availablePapers.find((p) => String(p.id) === String(uploadPaperId)) ||
-      availablePapers[0],
+      availablePapers.find((p) => String(p.id) === String(uploadPaperId)) || null,
     [availablePapers, uploadPaperId]
   );
 
   const selectedUploadPaperMaxMarks = useMemo(
-    () => Number(selectedUploadPaper?.max_marks) || 50,
+    () => (selectedUploadPaper ? Number(selectedUploadPaper.max_marks) || 50 : 0),
     [selectedUploadPaper]
   );
 
@@ -517,11 +540,11 @@ const TeacherDashboard = () => {
     if (Number.isNaN(num) || num < 0) {
       return 'Marks obtained cannot be negative.';
     }
-    if (num > selectedUploadPaperMaxMarks) {
+    if (selectedUploadPaper && selectedUploadPaperMaxMarks > 0 && num > selectedUploadPaperMaxMarks) {
       return `Marks obtained cannot exceed maximum marks (${selectedUploadPaperMaxMarks}).`;
     }
     return '';
-  }, [uploadMarksObtained, selectedUploadPaperMaxMarks]);
+  }, [uploadMarksObtained, selectedUploadPaper, selectedUploadPaperMaxMarks]);
 
   const uploadCalculatedPercentage = useMemo(() => {
     if (uploadMarksObtained === '' || uploadMarksError || selectedUploadPaperMaxMarks <= 0) {
@@ -532,8 +555,7 @@ const TeacherDashboard = () => {
 
   const selectedUploadStudent = useMemo(
     () =>
-      availableStudents.find((s) => String(s.id) === String(uploadStudentId)) ||
-      availableStudents[0],
+      availableStudents.find((s) => String(s.id) === String(uploadStudentId)) || null,
     [availableStudents, uploadStudentId]
   );
 
@@ -580,11 +602,11 @@ const TeacherDashboard = () => {
       });
       return;
     }
-    if (!selectedUploadPaper) {
+    if (!selectedUploadPaper || !uploadPaperId) {
       setUploadStatus({ type: 'error', text: 'Please select an examination paper.' });
       return;
     }
-    if (!selectedUploadStudent) {
+    if (!selectedUploadStudent || !uploadStudentId) {
       setUploadStatus({ type: 'error', text: 'Please select a student.' });
       return;
     }
@@ -604,14 +626,28 @@ const TeacherDashboard = () => {
       const pct = maxNum > 0 ? Math.round((obtainedNum / maxNum) * 100) : 0;
       const filePreviewUrl = URL.createObjectURL(uploadedFile);
 
+      // Prepare multipart FormData matching uploadController & paperRoute
+      const formData = new FormData();
+      formData.append('pdf', uploadedFile);
+      formData.append('total_marks', obtainedNum);
+      formData.append('student_id', 2);
+      formData.append('teacher_id', 1);
+      formData.append('paper_id', Number(selectedUploadPaper.id));
+
+      const response = await axios.post(`${API_BASE_URL}/api/upload`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
       const newRecord = {
         id: `EVAL-UP-${Date.now()}`,
         paperId: selectedUploadPaper.id,
         paperName: selectedUploadPaper.name,
         subject: selectedUploadPaper.subject || 'General',
         grade: selectedUploadPaper.grade || 5,
-        studentId: selectedUploadStudent.id,
-        studentName: selectedUploadStudent.name,
+        studentId: 1,
+        studentName: selectedUploadStudent?.name || 'Student #1',
         marksObtained: obtainedNum,
         maxMarks: maxNum,
         percentage: pct,
@@ -624,11 +660,22 @@ const TeacherDashboard = () => {
       setUploadedEvaluatedList((prev) => [newRecord, ...prev]);
       setUploadStatus({
         type: 'success',
-        text: `Uploaded evaluated paper for ${newRecord.studentName} — ${newRecord.paperName} (${newRecord.marksObtained}/${newRecord.maxMarks} marks).`,
+        text:
+          response.data?.message ||
+          `Evaluated paper uploaded successfully for ${newRecord.studentName} — ${newRecord.paperName} (${newRecord.marksObtained}/${newRecord.maxMarks} marks).`,
       });
       setUploadedFile(null);
       setUploadMarksObtained('');
       if (fileInputRef.current) fileInputRef.current.value = '';
+    } catch (err) {
+      console.error('Error uploading evaluated paper:', err);
+      setUploadStatus({
+        type: 'error',
+        text:
+          err.response?.data?.message ||
+          err.message ||
+          'Failed to upload evaluated paper. Please check server logs.',
+      });
     } finally {
       setUploadingPaper(false);
     }
@@ -684,11 +731,10 @@ const TeacherDashboard = () => {
                 key={tab.id}
                 type="button"
                 onClick={() => setActiveView(tab.id)}
-                className={`h-8 px-4 rounded-full text-[13px] font-medium transition-all active:scale-[0.98] ${
-                  activeView === tab.id
-                    ? 'bg-[#292524] text-white shadow-2xs'
-                    : 'text-[#4e4e4e] hover:text-[#0c0a09]'
-                }`}
+                className={`h-8 px-4 rounded-full text-[13px] font-medium transition-all active:scale-[0.98] ${activeView === tab.id
+                  ? 'bg-[#292524] text-white shadow-2xs'
+                  : 'text-[#4e4e4e] hover:text-[#0c0a09]'
+                  }`}
               >
                 {tab.label}
               </button>
@@ -799,11 +845,10 @@ const TeacherDashboard = () => {
                 key={tab.id}
                 type="button"
                 onClick={() => setActiveView(tab.id)}
-                className={`h-9 px-3.5 rounded-full text-[13px] font-medium border transition-all active:scale-[0.98] ${
-                  activeView === tab.id
-                    ? 'bg-[#292524] text-white border-[#292524]'
-                    : 'bg-white text-[#4e4e4e] border-[#d6d3d1]'
-                }`}
+                className={`h-9 px-3.5 rounded-full text-[13px] font-medium border transition-all active:scale-[0.98] ${activeView === tab.id
+                  ? 'bg-[#292524] text-white border-[#292524]'
+                  : 'bg-white text-[#4e4e4e] border-[#d6d3d1]'
+                  }`}
               >
                 {tab.label}
               </button>
@@ -812,626 +857,625 @@ const TeacherDashboard = () => {
         </section>
 
         {activeView === 'compose' && (
-        <form autoComplete="off" onSubmit={handleGeneratePaper} className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          <form autoComplete="off" onSubmit={handleGeneratePaper} className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
 
-          <div className="lg:col-span-8 flex flex-col gap-6">
+            <div className="lg:col-span-8 flex flex-col gap-6">
 
-            <section className="bg-white rounded-2xl border border-[#e7e5e4] p-6 sm:p-8 shadow-[0_4px_16px_rgba(0,0,0,0.02)]">
-              <div className="flex items-center justify-between pb-5 mb-6 border-b border-[#f0efed]">
-                <div>
-                  <h2 className="font-serif font-light text-2xl sm:text-[28px] text-[#0c0a09] tracking-[-0.02em] leading-[1.2]">
-                    Paper Details
-                  </h2>
-                  <p className="text-[14px] text-[#777169] mt-1">
-                    Header metadata printed at the top of the generated PDF worksheet.
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={handleReset}
-                  className="hidden sm:inline-flex items-center h-9 px-4 rounded-full bg-transparent border border-[#d6d3d1] hover:border-[#0c0a09] text-[#292524] text-[13.5px] font-medium transition-all active:scale-[0.98]"
-                >
-                  Clear Form
-                </button>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-12 gap-5">
-                {/* Paper Title (name) */}
-                <div className="sm:col-span-7 flex flex-col gap-2">
-                  <label htmlFor="paper-name" className="text-[14px] font-medium text-[#292524]">
-                    Paper Title
-                  </label>
-                  <input
-                    id="paper-name"
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="e.g., Science Annual Examination (Class V)"
-                    className="w-full h-11 px-4 rounded-lg bg-white border border-[#d6d3d1] text-[15px] text-[#0c0a09] placeholder-[#777169]/70 outline-none focus:border-[#0c0a09] focus:ring-1 focus:ring-[#0c0a09] transition-all"
-                    required
-                  />
-                </div>
-
-                {/* Subject */}
-                <div className="sm:col-span-5 flex flex-col gap-2">
-                  <label htmlFor="paper-subject" className="text-[14px] font-medium text-[#292524]">
-                    Subject
-                  </label>
-                  <input
-                    id="paper-subject"
-                    type="text"
-                    value={subject}
-                    onChange={(e) => setSubject(e.target.value)}
-                    placeholder="e.g., Science"
-                    className="w-full h-11 px-4 rounded-lg bg-white border border-[#d6d3d1] text-[15px] text-[#0c0a09] placeholder-[#777169]/70 outline-none focus:border-[#0c0a09] focus:ring-1 focus:ring-[#0c0a09] transition-all"
-                    required
-                  />
-                </div>
-
-                {/* Description / Institution Header */}
-                <div className="sm:col-span-12 flex flex-col gap-2">
-                  <label htmlFor="paper-description" className="text-[14px] font-medium text-[#292524]">
-                    Institution or Session Description
-                  </label>
-                  <input
-                    id="paper-description"
-                    type="text"
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    placeholder="e.g., DPS Bangalore North Academic Session 2025-2026"
-                    className="w-full h-11 px-4 rounded-lg bg-white border border-[#d6d3d1] text-[15px] text-[#0c0a09] placeholder-[#777169]/70 outline-none focus:border-[#0c0a09] focus:ring-1 focus:ring-[#0c0a09] transition-all"
-                  />
-                </div>
-
-                {/* Grade */}
-                <div className="sm:col-span-4 flex flex-col gap-2">
-                  <label htmlFor="paper-grade" className="text-[14px] font-medium text-[#292524]">
-                    Grade / Class
-                  </label>
-                  <input
-                    id="paper-grade"
-                    type="number"
-                    min="1"
-                    max="12"
-                    value={grade}
-                    onChange={(e) => setGrade(e.target.value)}
-                    className="w-full h-11 px-4 rounded-lg bg-white border border-[#d6d3d1] text-[15px] text-[#0c0a09] tabular-nums outline-none focus:border-[#0c0a09] focus:ring-1 focus:ring-[#0c0a09] transition-all"
-                    required
-                  />
-                </div>
-
-                {/* Duration (mins) */}
-                <div className="sm:col-span-4 flex flex-col gap-2">
-                  <label htmlFor="paper-duration" className="text-[14px] font-medium text-[#292524]">
-                    Duration (Minutes)
-                  </label>
-                  <input
-                    id="paper-duration"
-                    type="number"
-                    min="5"
-                    step="5"
-                    value={duration}
-                    onChange={(e) => setDuration(e.target.value)}
-                    className="w-full h-11 px-4 rounded-lg bg-white border border-[#d6d3d1] text-[15px] text-[#0c0a09] tabular-nums outline-none focus:border-[#0c0a09] focus:ring-1 focus:ring-[#0c0a09] transition-all"
-                    required
-                  />
-                </div>
-
-                {/* Max Marks */}
-                <div className="sm:col-span-4 flex flex-col gap-2">
-                  <div className="flex items-center justify-between">
-                    <label htmlFor="paper-max-marks" className="text-[14px] font-medium text-[#292524]">
-                      Maximum Marks
-                    </label>
-                    {allocatedMarks > 0 && Number(maxMarks) !== allocatedMarks && (
-                      <button
-                        type="button"
-                        onClick={() => setMaxMarks(allocatedMarks)}
-                        className="text-[12px] font-medium text-[#292524] underline hover:text-[#0c0a09]"
-                      >
-                        Match sum ({allocatedMarks})
-                      </button>
-                    )}
+              <section className="bg-white rounded-2xl border border-[#e7e5e4] p-6 sm:p-8 shadow-[0_4px_16px_rgba(0,0,0,0.02)]">
+                <div className="flex items-center justify-between pb-5 mb-6 border-b border-[#f0efed]">
+                  <div>
+                    <h2 className="font-serif font-light text-2xl sm:text-[28px] text-[#0c0a09] tracking-[-0.02em] leading-[1.2]">
+                      Paper Details
+                    </h2>
+                    <p className="text-[14px] text-[#777169] mt-1">
+                      Header metadata printed at the top of the generated PDF worksheet.
+                    </p>
                   </div>
-                  <input
-                    id="paper-max-marks"
-                    type="number"
-                    min="1"
-                    value={maxMarks}
-                    onChange={(e) => setMaxMarks(e.target.value)}
-                    className="w-full h-11 px-4 rounded-lg bg-white border border-[#d6d3d1] text-[15px] text-[#0c0a09] tabular-nums outline-none focus:border-[#0c0a09] focus:ring-1 focus:ring-[#0c0a09] transition-all"
-                    required
-                  />
+                  <button
+                    type="button"
+                    onClick={handleReset}
+                    className="hidden sm:inline-flex items-center h-9 px-4 rounded-full bg-transparent border border-[#d6d3d1] hover:border-[#0c0a09] text-[#292524] text-[13.5px] font-medium transition-all active:scale-[0.98]"
+                  >
+                    Clear Form
+                  </button>
                 </div>
 
-                {/* Availability Window */}
-                <div className="sm:col-span-6 flex flex-col gap-2">
-                  <label htmlFor="paper-start-date" className="text-[14px] font-medium text-[#292524]">
-                    Start Date
-                  </label>
-                  <input
-                    id="paper-start-date"
-                    type="datetime-local"
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
-                    aria-describedby="paper-date-help"
-                    className="w-full h-11 px-4 rounded-lg bg-white border border-[#d6d3d1] text-[15px] text-[#0c0a09] tabular-nums outline-none focus:border-[#0c0a09] focus:ring-1 focus:ring-[#0c0a09] transition-all"
-                    required
-                  />
-                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-12 gap-5">
+                  {/* Paper Title (name) */}
+                  <div className="sm:col-span-7 flex flex-col gap-2">
+                    <label htmlFor="paper-name" className="text-[14px] font-medium text-[#292524]">
+                      Paper Title
+                    </label>
+                    <input
+                      id="paper-name"
+                      type="text"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="e.g., Science Annual Examination (Class V)"
+                      className="w-full h-11 px-4 rounded-lg bg-white border border-[#d6d3d1] text-[15px] text-[#0c0a09] placeholder-[#777169]/70 outline-none focus:border-[#0c0a09] focus:ring-1 focus:ring-[#0c0a09] transition-all"
+                      required
+                    />
+                  </div>
 
-                <div className="sm:col-span-6 flex flex-col gap-2">
-                  <label htmlFor="paper-end-date" className="text-[14px] font-medium text-[#292524]">
-                    End Date
-                  </label>
-                  <input
-                    id="paper-end-date"
-                    type="datetime-local"
-                    value={endDate}
-                    min={startDate || undefined}
-                    onChange={(e) => setEndDate(e.target.value)}
-                    aria-invalid={Boolean(dateRangeError)}
-                    aria-describedby="paper-date-help"
-                    className={`w-full h-11 px-4 rounded-lg bg-white border text-[15px] text-[#0c0a09] tabular-nums outline-none focus:ring-1 transition-all ${
-                      dateRangeError
+                  {/* Subject */}
+                  <div className="sm:col-span-5 flex flex-col gap-2">
+                    <label htmlFor="paper-subject" className="text-[14px] font-medium text-[#292524]">
+                      Subject
+                    </label>
+                    <input
+                      id="paper-subject"
+                      type="text"
+                      value={subject}
+                      onChange={(e) => setSubject(e.target.value)}
+                      placeholder="e.g., Science"
+                      className="w-full h-11 px-4 rounded-lg bg-white border border-[#d6d3d1] text-[15px] text-[#0c0a09] placeholder-[#777169]/70 outline-none focus:border-[#0c0a09] focus:ring-1 focus:ring-[#0c0a09] transition-all"
+                      required
+                    />
+                  </div>
+
+                  {/* Description / Institution Header */}
+                  <div className="sm:col-span-12 flex flex-col gap-2">
+                    <label htmlFor="paper-description" className="text-[14px] font-medium text-[#292524]">
+                      Institution or Session Description
+                    </label>
+                    <input
+                      id="paper-description"
+                      type="text"
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      placeholder="e.g., DPS Bangalore North Academic Session 2025-2026"
+                      className="w-full h-11 px-4 rounded-lg bg-white border border-[#d6d3d1] text-[15px] text-[#0c0a09] placeholder-[#777169]/70 outline-none focus:border-[#0c0a09] focus:ring-1 focus:ring-[#0c0a09] transition-all"
+                    />
+                  </div>
+
+                  {/* Grade */}
+                  <div className="sm:col-span-4 flex flex-col gap-2">
+                    <label htmlFor="paper-grade" className="text-[14px] font-medium text-[#292524]">
+                      Grade / Class
+                    </label>
+                    <input
+                      id="paper-grade"
+                      type="number"
+                      min="1"
+                      max="12"
+                      value={grade}
+                      onChange={(e) => setGrade(e.target.value)}
+                      className="w-full h-11 px-4 rounded-lg bg-white border border-[#d6d3d1] text-[15px] text-[#0c0a09] tabular-nums outline-none focus:border-[#0c0a09] focus:ring-1 focus:ring-[#0c0a09] transition-all"
+                      required
+                    />
+                  </div>
+
+                  {/* Duration (mins) */}
+                  <div className="sm:col-span-4 flex flex-col gap-2">
+                    <label htmlFor="paper-duration" className="text-[14px] font-medium text-[#292524]">
+                      Duration (Minutes)
+                    </label>
+                    <input
+                      id="paper-duration"
+                      type="number"
+                      min="5"
+                      step="5"
+                      value={duration}
+                      onChange={(e) => setDuration(e.target.value)}
+                      className="w-full h-11 px-4 rounded-lg bg-white border border-[#d6d3d1] text-[15px] text-[#0c0a09] tabular-nums outline-none focus:border-[#0c0a09] focus:ring-1 focus:ring-[#0c0a09] transition-all"
+                      required
+                    />
+                  </div>
+
+                  {/* Max Marks */}
+                  <div className="sm:col-span-4 flex flex-col gap-2">
+                    <div className="flex items-center justify-between">
+                      <label htmlFor="paper-max-marks" className="text-[14px] font-medium text-[#292524]">
+                        Maximum Marks
+                      </label>
+                      {allocatedMarks > 0 && Number(maxMarks) !== allocatedMarks && (
+                        <button
+                          type="button"
+                          onClick={() => setMaxMarks(allocatedMarks)}
+                          className="text-[12px] font-medium text-[#292524] underline hover:text-[#0c0a09]"
+                        >
+                          Match sum ({allocatedMarks})
+                        </button>
+                      )}
+                    </div>
+                    <input
+                      id="paper-max-marks"
+                      type="number"
+                      min="1"
+                      value={maxMarks}
+                      onChange={(e) => setMaxMarks(e.target.value)}
+                      className="w-full h-11 px-4 rounded-lg bg-white border border-[#d6d3d1] text-[15px] text-[#0c0a09] tabular-nums outline-none focus:border-[#0c0a09] focus:ring-1 focus:ring-[#0c0a09] transition-all"
+                      required
+                    />
+                  </div>
+
+                  {/* Availability Window */}
+                  <div className="sm:col-span-6 flex flex-col gap-2">
+                    <label htmlFor="paper-start-date" className="text-[14px] font-medium text-[#292524]">
+                      Start Date
+                    </label>
+                    <input
+                      id="paper-start-date"
+                      type="datetime-local"
+                      value={startDate}
+                      onChange={(e) => setStartDate(e.target.value)}
+                      aria-describedby="paper-date-help"
+                      className="w-full h-11 px-4 rounded-lg bg-white border border-[#d6d3d1] text-[15px] text-[#0c0a09] tabular-nums outline-none focus:border-[#0c0a09] focus:ring-1 focus:ring-[#0c0a09] transition-all"
+                      required
+                    />
+                  </div>
+
+                  <div className="sm:col-span-6 flex flex-col gap-2">
+                    <label htmlFor="paper-end-date" className="text-[14px] font-medium text-[#292524]">
+                      End Date
+                    </label>
+                    <input
+                      id="paper-end-date"
+                      type="datetime-local"
+                      value={endDate}
+                      min={startDate || undefined}
+                      onChange={(e) => setEndDate(e.target.value)}
+                      aria-invalid={Boolean(dateRangeError)}
+                      aria-describedby="paper-date-help"
+                      className={`w-full h-11 px-4 rounded-lg bg-white border text-[15px] text-[#0c0a09] tabular-nums outline-none focus:ring-1 transition-all ${dateRangeError
                         ? 'border-[#b91c1c] focus:border-[#b91c1c] focus:ring-[#b91c1c]'
                         : 'border-[#d6d3d1] focus:border-[#0c0a09] focus:ring-[#0c0a09]'
-                    }`}
-                    required
-                  />
-                </div>
-
-                <p
-                  id="paper-date-help"
-                  className={`sm:col-span-12 -mt-2 text-[12.5px] ${dateRangeError ? 'text-[#b91c1c]' : 'text-[#777169]'}`}
-                >
-                  {dateRangeError || 'Students can attempt the paper only within this window.'}
-                </p>
-
-                {/* Filename */}
-                <div className="sm:col-span-12 flex flex-col gap-2">
-                  <div className="flex items-center justify-between">
-                    <label htmlFor="paper-filename" className="text-[14px] font-medium text-[#292524]">
-                      PDF Filename
-                    </label>
-                    <span className="text-[12.5px] text-[#777169]">
-                      Saved as: <span className="font-medium text-[#292524]">{resolvedFilename}</span>
-                    </span>
+                        }`}
+                      required
+                    />
                   </div>
-                  <input
-                    id="paper-filename"
-                    type="text"
-                    value={customFilename}
-                    onChange={(e) => setCustomFilename(e.target.value)}
-                    placeholder="Leave blank to auto-generate from title (e.g., Science_Annual_Exam.pdf)"
-                    className="w-full h-11 px-4 rounded-lg bg-white border border-[#d6d3d1] text-[15px] text-[#0c0a09] placeholder-[#777169]/70 outline-none focus:border-[#0c0a09] focus:ring-1 focus:ring-[#0c0a09] transition-all"
-                  />
-                </div>
-              </div>
-            </section>
 
-            {/* Step 2: Questions Builder Section */}
-            <section className="bg-white rounded-2xl border border-[#e7e5e4] p-6 sm:p-8 shadow-[0_4px_16px_rgba(0,0,0,0.02)] flex flex-col gap-6">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-[#f0efed]">
-                <div>
-                  <h2 className="font-serif font-light text-2xl sm:text-[28px] text-[#0c0a09] tracking-[-0.02em] leading-[1.2]">
-                    Question Bank ({questions.length})
-                  </h2>
-                  <p className="text-[14px] text-[#777169] mt-1">
-                    Choose objective (multiple choice) or subjective text questions and assign marks.
+                  <p
+                    id="paper-date-help"
+                    className={`sm:col-span-12 -mt-2 text-[12.5px] ${dateRangeError ? 'text-[#b91c1c]' : 'text-[#777169]'}`}
+                  >
+                    {dateRangeError || 'Students can attempt the paper only within this window.'}
                   </p>
-                </div>
 
-                <div className="flex items-center gap-2.5 shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => addQuestion('objective')}
-                    className="h-10 px-4 rounded-full bg-[#292524] hover:bg-[#0c0a09] text-white text-[13.5px] font-medium transition-all active:scale-[0.98]"
-                  >
-                    + Objective
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => addQuestion('subjective')}
-                    className="h-10 px-4 rounded-full bg-transparent border border-[#d6d3d1] hover:border-[#0c0a09] text-[#0c0a09] text-[13.5px] font-medium transition-all active:scale-[0.98]"
-                  >
-                    + Subjective
-                  </button>
+                  {/* Filename */}
+                  <div className="sm:col-span-12 flex flex-col gap-2">
+                    <div className="flex items-center justify-between">
+                      <label htmlFor="paper-filename" className="text-[14px] font-medium text-[#292524]">
+                        PDF Filename
+                      </label>
+                      <span className="text-[12.5px] text-[#777169]">
+                        Saved as: <span className="font-medium text-[#292524]">{resolvedFilename}</span>
+                      </span>
+                    </div>
+                    <input
+                      id="paper-filename"
+                      type="text"
+                      value={customFilename}
+                      onChange={(e) => setCustomFilename(e.target.value)}
+                      placeholder="Leave blank to auto-generate from title (e.g., Science_Annual_Exam.pdf)"
+                      className="w-full h-11 px-4 rounded-lg bg-white border border-[#d6d3d1] text-[15px] text-[#0c0a09] placeholder-[#777169]/70 outline-none focus:border-[#0c0a09] focus:ring-1 focus:ring-[#0c0a09] transition-all"
+                    />
+                  </div>
                 </div>
-              </div>
+              </section>
 
-              {/* Questions List */}
-              <div className="flex flex-col gap-6">
-                {questions.map((q, qIndex) => {
-                  const isObjective = q.type === 'objective';
-                  return (
-                    <article
-                      key={qIndex}
-                      className="rounded-2xl border border-[#e7e5e4] bg-[#fafafa] p-5 sm:p-6 flex flex-col gap-5 transition-all"
+              {/* Step 2: Questions Builder Section */}
+              <section className="bg-white rounded-2xl border border-[#e7e5e4] p-6 sm:p-8 shadow-[0_4px_16px_rgba(0,0,0,0.02)] flex flex-col gap-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-[#f0efed]">
+                  <div>
+                    <h2 className="font-serif font-light text-2xl sm:text-[28px] text-[#0c0a09] tracking-[-0.02em] leading-[1.2]">
+                      Question Bank ({questions.length})
+                    </h2>
+                    <p className="text-[14px] text-[#777169] mt-1">
+                      Choose objective (multiple choice) or subjective text questions and assign marks.
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2.5 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => addQuestion('objective')}
+                      className="h-10 px-4 rounded-full bg-[#292524] hover:bg-[#0c0a09] text-white text-[13.5px] font-medium transition-all active:scale-[0.98]"
                     >
-                      {/* Top Bar: Question Number + Type Toggle + Reorder/Delete */}
-                      <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-[#e7e5e4]">
-                        <div className="flex items-center gap-3">
-                          <span className="inline-flex items-center justify-center h-8 px-3 rounded-full bg-[#292524] text-white text-[13px] font-medium tabular-nums">
-                            Question {qIndex + 1}
-                          </span>
+                      + Objective
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => addQuestion('subjective')}
+                      className="h-10 px-4 rounded-full bg-transparent border border-[#d6d3d1] hover:border-[#0c0a09] text-[#0c0a09] text-[13.5px] font-medium transition-all active:scale-[0.98]"
+                    >
+                      + Subjective
+                    </button>
+                  </div>
+                </div>
 
-                          {/* Segmented Pill Toggle for Question Type */}
-                          <div
-                            className="inline-flex items-center p-1 rounded-full bg-[#f0efed] border border-[#e7e5e4]"
-                            role="group"
-                            aria-label={`Question ${qIndex + 1} type`}
-                          >
-                            <button
-                              type="button"
-                              onClick={() => updateQuestionField(qIndex, 'type', 'objective')}
-                              className={`h-7 px-3.5 rounded-full text-[12.5px] font-medium transition-all ${isObjective
-                                ? 'bg-[#292524] text-white'
-                                : 'text-[#4e4e4e] hover:text-[#0c0a09]'
-                                }`}
-                            >
-                              Objective (MCQ)
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => updateQuestionField(qIndex, 'type', 'subjective')}
-                              className={`h-7 px-3.5 rounded-full text-[12.5px] font-medium transition-all ${!isObjective
-                                ? 'bg-[#292524] text-white'
-                                : 'text-[#4e4e4e] hover:text-[#0c0a09]'
-                                }`}
-                            >
-                              Subjective
-                            </button>
-                          </div>
-                        </div>
+                {/* Questions List */}
+                <div className="flex flex-col gap-6">
+                  {questions.map((q, qIndex) => {
+                    const isObjective = q.type === 'objective';
+                    return (
+                      <article
+                        key={qIndex}
+                        className="rounded-2xl border border-[#e7e5e4] bg-[#fafafa] p-5 sm:p-6 flex flex-col gap-5 transition-all"
+                      >
+                        {/* Top Bar: Question Number + Type Toggle + Reorder/Delete */}
+                        <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-[#e7e5e4]">
+                          <div className="flex items-center gap-3">
+                            <span className="inline-flex items-center justify-center h-8 px-3 rounded-full bg-[#292524] text-white text-[13px] font-medium tabular-nums">
+                              Question {qIndex + 1}
+                            </span>
 
-                        {/* Question Order & Delete Controls */}
-                        <div className="flex items-center gap-1.5">
-                          <button
-                            type="button"
-                            onClick={() => moveQuestion(qIndex, -1)}
-                            disabled={qIndex === 0}
-                            title="Move question up"
-                            aria-label={`Move question ${qIndex + 1} up`}
-                            className="w-8 h-8 rounded-full border border-[#d6d3d1] bg-white hover:border-[#0c0a09] text-[#292524] flex items-center justify-center disabled:opacity-35 disabled:pointer-events-none transition-all"
-                          >
-                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.75" d="M5 15l7-7 7 7" />
-                            </svg>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => moveQuestion(qIndex, 1)}
-                            disabled={qIndex === questions.length - 1}
-                            title="Move question down"
-                            aria-label={`Move question ${qIndex + 1} down`}
-                            className="w-8 h-8 rounded-full border border-[#d6d3d1] bg-white hover:border-[#0c0a09] text-[#292524] flex items-center justify-center disabled:opacity-35 disabled:pointer-events-none transition-all"
-                          >
-                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.75" d="M19 9l-7 7-7-7" />
-                            </svg>
-                          </button>
-                          {questions.length > 1 && (
-                            <button
-                              type="button"
-                              onClick={() => removeQuestion(qIndex)}
-                              className="h-8 px-3 rounded-full border border-[#d6d3d1] bg-white hover:border-[#dc2626] hover:text-[#dc2626] text-[#4e4e4e] text-[12.5px] font-medium transition-all"
+                            {/* Segmented Pill Toggle for Question Type */}
+                            <div
+                              className="inline-flex items-center p-1 rounded-full bg-[#f0efed] border border-[#e7e5e4]"
+                              role="group"
+                              aria-label={`Question ${qIndex + 1} type`}
                             >
-                              Delete
-                            </button>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Row 2: Section Heading & Marks */}
-                      <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
-                        <div className="sm:col-span-8 flex flex-col gap-2">
-                          <label
-                            htmlFor={`q-heading-${qIndex}`}
-                            className="text-[13.5px] font-medium text-[#292524]"
-                          >
-                            Section Heading
-                          </label>
-                          <input
-                            id={`q-heading-${qIndex}`}
-                            type="text"
-                            value={q.heading}
-                            onChange={(e) => updateQuestionField(qIndex, 'heading', e.target.value)}
-                            placeholder="e.g., I. MULTIPLE CHOICE QUESTIONS"
-                            className="w-full h-11 px-4 rounded-lg bg-white border border-[#d6d3d1] text-[14.5px] text-[#0c0a09] placeholder-[#777169]/70 outline-none focus:border-[#0c0a09] focus:ring-1 focus:ring-[#0c0a09] transition-all"
-                          />
-                          <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
-                            {HEADING_PRESETS.map((preset) => (
                               <button
-                                key={preset}
                                 type="button"
-                                onClick={() => updateQuestionField(qIndex, 'heading', preset)}
-                                className={`text-[11.5px] px-2.5 py-1 rounded-full border transition-all ${q.heading === preset
-                                  ? 'bg-[#292524] text-white border-[#292524]'
-                                  : 'bg-white text-[#4e4e4e] border-[#e7e5e4] hover:border-[#0c0a09]'
+                                onClick={() => updateQuestionField(qIndex, 'type', 'objective')}
+                                className={`h-7 px-3.5 rounded-full text-[12.5px] font-medium transition-all ${isObjective
+                                  ? 'bg-[#292524] text-white'
+                                  : 'text-[#4e4e4e] hover:text-[#0c0a09]'
                                   }`}
                               >
-                                {preset}
+                                Objective (MCQ)
                               </button>
-                            ))}
+                              <button
+                                type="button"
+                                onClick={() => updateQuestionField(qIndex, 'type', 'subjective')}
+                                className={`h-7 px-3.5 rounded-full text-[12.5px] font-medium transition-all ${!isObjective
+                                  ? 'bg-[#292524] text-white'
+                                  : 'text-[#4e4e4e] hover:text-[#0c0a09]'
+                                  }`}
+                              >
+                                Subjective
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Question Order & Delete Controls */}
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => moveQuestion(qIndex, -1)}
+                              disabled={qIndex === 0}
+                              title="Move question up"
+                              aria-label={`Move question ${qIndex + 1} up`}
+                              className="w-8 h-8 rounded-full border border-[#d6d3d1] bg-white hover:border-[#0c0a09] text-[#292524] flex items-center justify-center disabled:opacity-35 disabled:pointer-events-none transition-all"
+                            >
+                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.75" d="M5 15l7-7 7 7" />
+                              </svg>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => moveQuestion(qIndex, 1)}
+                              disabled={qIndex === questions.length - 1}
+                              title="Move question down"
+                              aria-label={`Move question ${qIndex + 1} down`}
+                              className="w-8 h-8 rounded-full border border-[#d6d3d1] bg-white hover:border-[#0c0a09] text-[#292524] flex items-center justify-center disabled:opacity-35 disabled:pointer-events-none transition-all"
+                            >
+                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.75" d="M19 9l-7 7-7-7" />
+                              </svg>
+                            </button>
+                            {questions.length > 1 && (
+                              <button
+                                type="button"
+                                onClick={() => removeQuestion(qIndex)}
+                                className="h-8 px-3 rounded-full border border-[#d6d3d1] bg-white hover:border-[#dc2626] hover:text-[#dc2626] text-[#4e4e4e] text-[12.5px] font-medium transition-all"
+                              >
+                                Delete
+                              </button>
+                            )}
                           </div>
                         </div>
 
-                        <div className="sm:col-span-4 flex flex-col gap-2">
+                        {/* Row 2: Section Heading & Marks */}
+                        <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
+                          <div className="sm:col-span-8 flex flex-col gap-2">
+                            <label
+                              htmlFor={`q-heading-${qIndex}`}
+                              className="text-[13.5px] font-medium text-[#292524]"
+                            >
+                              Section Heading
+                            </label>
+                            <input
+                              id={`q-heading-${qIndex}`}
+                              type="text"
+                              value={q.heading}
+                              onChange={(e) => updateQuestionField(qIndex, 'heading', e.target.value)}
+                              placeholder="e.g., I. MULTIPLE CHOICE QUESTIONS"
+                              className="w-full h-11 px-4 rounded-lg bg-white border border-[#d6d3d1] text-[14.5px] text-[#0c0a09] placeholder-[#777169]/70 outline-none focus:border-[#0c0a09] focus:ring-1 focus:ring-[#0c0a09] transition-all"
+                            />
+                            <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                              {HEADING_PRESETS.map((preset) => (
+                                <button
+                                  key={preset}
+                                  type="button"
+                                  onClick={() => updateQuestionField(qIndex, 'heading', preset)}
+                                  className={`text-[11.5px] px-2.5 py-1 rounded-full border transition-all ${q.heading === preset
+                                    ? 'bg-[#292524] text-white border-[#292524]'
+                                    : 'bg-white text-[#4e4e4e] border-[#e7e5e4] hover:border-[#0c0a09]'
+                                    }`}
+                                >
+                                  {preset}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+
+                          <div className="sm:col-span-4 flex flex-col gap-2">
+                            <label
+                              htmlFor={`q-marks-${qIndex}`}
+                              className="text-[13.5px] font-medium text-[#292524]"
+                            >
+                              Marks
+                            </label>
+                            <input
+                              id={`q-marks-${qIndex}`}
+                              type="number"
+                              min="1"
+                              max="100"
+                              value={q.marks}
+                              onChange={(e) => updateQuestionField(qIndex, 'marks', e.target.value)}
+                              className="w-full h-11 px-4 rounded-lg bg-white border border-[#d6d3d1] text-[15px] text-[#0c0a09] tabular-nums outline-none focus:border-[#0c0a09] focus:ring-1 focus:ring-[#0c0a09] transition-all"
+                              required
+                            />
+                            <div className="flex items-center gap-1.5 pt-0.5">
+                              {MARK_PRESETS.map((markVal) => (
+                                <button
+                                  key={markVal}
+                                  type="button"
+                                  onClick={() => updateQuestionField(qIndex, 'marks', markVal)}
+                                  className={`h-7 px-2.5 rounded-full text-[12px] font-medium tabular-nums border transition-all ${Number(q.marks) === markVal
+                                    ? 'bg-[#292524] text-white border-[#292524]'
+                                    : 'bg-white text-[#4e4e4e] border-[#e7e5e4] hover:border-[#0c0a09]'
+                                    }`}
+                                >
+                                  {markVal}M
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Row 3: Question Text Prompt */}
+                        <div className="flex flex-col gap-2">
                           <label
-                            htmlFor={`q-marks-${qIndex}`}
+                            htmlFor={`q-prompt-${qIndex}`}
                             className="text-[13.5px] font-medium text-[#292524]"
                           >
-                            Marks
+                            Question Prompt
                           </label>
-                          <input
-                            id={`q-marks-${qIndex}`}
-                            type="number"
-                            min="1"
-                            max="100"
-                            value={q.marks}
-                            onChange={(e) => updateQuestionField(qIndex, 'marks', e.target.value)}
-                            className="w-full h-11 px-4 rounded-lg bg-white border border-[#d6d3d1] text-[15px] text-[#0c0a09] tabular-nums outline-none focus:border-[#0c0a09] focus:ring-1 focus:ring-[#0c0a09] transition-all"
+                          <textarea
+                            id={`q-prompt-${qIndex}`}
+                            rows={2}
+                            value={q.question}
+                            onChange={(e) => updateQuestionField(qIndex, 'question', e.target.value)}
+                            placeholder={
+                              isObjective
+                                ? 'Enter the multiple-choice question stem...'
+                                : 'Enter the subjective question prompt...'
+                            }
+                            className="w-full p-3.5 rounded-lg bg-white border border-[#d6d3d1] text-[15px] text-[#0c0a09] placeholder-[#777169]/70 outline-none focus:border-[#0c0a09] focus:ring-1 focus:ring-[#0c0a09] transition-all resize-y"
                             required
                           />
-                          <div className="flex items-center gap-1.5 pt-0.5">
-                            {MARK_PRESETS.map((markVal) => (
-                              <button
-                                key={markVal}
-                                type="button"
-                                onClick={() => updateQuestionField(qIndex, 'marks', markVal)}
-                                className={`h-7 px-2.5 rounded-full text-[12px] font-medium tabular-nums border transition-all ${Number(q.marks) === markVal
-                                  ? 'bg-[#292524] text-white border-[#292524]'
-                                  : 'bg-white text-[#4e4e4e] border-[#e7e5e4] hover:border-[#0c0a09]'
-                                  }`}
-                              >
-                                {markVal}M
-                              </button>
-                            ))}
-                          </div>
+                          {(q.question.includes('$') || q.question.includes('\\')) && (
+                            <div className="px-3.5 py-2 rounded-lg bg-white border border-[#e7e5e4] text-[14.5px] text-[#0c0a09]">
+                              <span className="text-[11.5px] font-semibold uppercase tracking-[0.06em] text-[#777169] mr-2">
+                                LaTeX Preview:
+                              </span>
+                              <LatexRenderer text={q.question} />
+                            </div>
+                          )}
                         </div>
-                      </div>
 
-                      {/* Row 3: Question Text Prompt */}
-                      <div className="flex flex-col gap-2">
-                        <label
-                          htmlFor={`q-prompt-${qIndex}`}
-                          className="text-[13.5px] font-medium text-[#292524]"
-                        >
-                          Question Prompt
-                        </label>
-                        <textarea
-                          id={`q-prompt-${qIndex}`}
-                          rows={2}
-                          value={q.question}
-                          onChange={(e) => updateQuestionField(qIndex, 'question', e.target.value)}
-                          placeholder={
-                            isObjective
-                              ? 'Enter the multiple-choice question stem...'
-                              : 'Enter the subjective question prompt...'
-                          }
-                          className="w-full p-3.5 rounded-lg bg-white border border-[#d6d3d1] text-[15px] text-[#0c0a09] placeholder-[#777169]/70 outline-none focus:border-[#0c0a09] focus:ring-1 focus:ring-[#0c0a09] transition-all resize-y"
-                          required
-                        />
-                        {(q.question.includes('$') || q.question.includes('\\')) && (
-                          <div className="px-3.5 py-2 rounded-lg bg-white border border-[#e7e5e4] text-[14.5px] text-[#0c0a09]">
-                            <span className="text-[11.5px] font-semibold uppercase tracking-[0.06em] text-[#777169] mr-2">
-                              LaTeX Preview:
+                        {/* Row 4: Options Grid (Only for Objective Questions) */}
+                        {isObjective && (
+                          <div className="flex flex-col gap-3 pt-1">
+                            <span className="text-[13.5px] font-medium text-[#292524]">
+                              Multiple Choice Options (A to D)
                             </span>
-                            <LatexRenderer text={q.question} />
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                              {(q.options || []).map((opt, optIdx) => (
+                                <div key={opt.label || optIdx} className="flex flex-col gap-1.5">
+                                  <label
+                                    htmlFor={`q-${qIndex}-opt-${optIdx}`}
+                                    className="text-[12.5px] font-medium text-[#4e4e4e]"
+                                  >
+                                    Option {opt.label}
+                                  </label>
+                                  <div className="relative flex items-center">
+                                    <span className="absolute left-3 w-6 h-6 rounded-full bg-[#f0efed] text-[#0c0a09] text-[12px] font-semibold flex items-center justify-center pointer-events-none">
+                                      {opt.label}
+                                    </span>
+                                    <input
+                                      id={`q-${qIndex}-opt-${optIdx}`}
+                                      type="text"
+                                      value={opt.text}
+                                      onChange={(e) => updateOptionText(qIndex, optIdx, e.target.value)}
+                                      placeholder={`Enter choice ${opt.label}...`}
+                                      className="w-full h-11 pl-11 pr-3.5 rounded-lg bg-white border border-[#d6d3d1] text-[14.5px] text-[#0c0a09] placeholder-[#777169]/70 outline-none focus:border-[#0c0a09] focus:ring-1 focus:ring-[#0c0a09] transition-all"
+                                      required
+                                    />
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
                           </div>
                         )}
-                      </div>
-
-                      {/* Row 4: Options Grid (Only for Objective Questions) */}
-                      {isObjective && (
-                        <div className="flex flex-col gap-3 pt-1">
-                          <span className="text-[13.5px] font-medium text-[#292524]">
-                            Multiple Choice Options (A to D)
-                          </span>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                            {(q.options || []).map((opt, optIdx) => (
-                              <div key={opt.label || optIdx} className="flex flex-col gap-1.5">
-                                <label
-                                  htmlFor={`q-${qIndex}-opt-${optIdx}`}
-                                  className="text-[12.5px] font-medium text-[#4e4e4e]"
-                                >
-                                  Option {opt.label}
-                                </label>
-                                <div className="relative flex items-center">
-                                  <span className="absolute left-3 w-6 h-6 rounded-full bg-[#f0efed] text-[#0c0a09] text-[12px] font-semibold flex items-center justify-center pointer-events-none">
-                                    {opt.label}
-                                  </span>
-                                  <input
-                                    id={`q-${qIndex}-opt-${optIdx}`}
-                                    type="text"
-                                    value={opt.text}
-                                    onChange={(e) => updateOptionText(qIndex, optIdx, e.target.value)}
-                                    placeholder={`Enter choice ${opt.label}...`}
-                                    className="w-full h-11 pl-11 pr-3.5 rounded-lg bg-white border border-[#d6d3d1] text-[14.5px] text-[#0c0a09] placeholder-[#777169]/70 outline-none focus:border-[#0c0a09] focus:ring-1 focus:ring-[#0c0a09] transition-all"
-                                    required
-                                  />
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </article>
-                  );
-                })}
-              </div>
-
-              {/* Bottom Quick-Add Bar */}
-              <div className="pt-2 flex flex-wrap items-center justify-between gap-4 border-t border-[#f0efed]">
-                <span className="text-[14px] text-[#777169]">
-                  Need more questions in this paper?
-                </span>
-                <div className="flex items-center gap-2.5">
-                  <button
-                    type="button"
-                    onClick={() => addQuestion('objective')}
-                    className="h-10 px-4 rounded-full bg-[#292524] hover:bg-[#0c0a09] text-white text-[13.5px] font-medium transition-all active:scale-[0.98]"
-                  >
-                    + Objective
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => addQuestion('subjective')}
-                    className="h-10 px-4 rounded-full bg-transparent border border-[#d6d3d1] hover:border-[#0c0a09] text-[#0c0a09] text-[13.5px] font-medium transition-all active:scale-[0.98]"
-                  >
-                    + Subjective
-                  </button>
+                      </article>
+                    );
+                  })}
                 </div>
-              </div>
-            </section>
-          </div>
 
-
-          <aside className="lg:col-span-4 lg:sticky lg:top-22 flex flex-col gap-6">
-
-            <div className="relative overflow-hidden bg-[#fafafa] rounded-3xl border border-[#e7e5e4] p-7 sm:p-8 shadow-[0_4px_16px_rgba(0,0,0,0.03)] flex flex-col gap-6">
-              <div
-                className="absolute -top-20 -right-20 w-64 h-64 rounded-full opacity-40 blur-2xl pointer-events-none"
-                style={{
-                  background: 'radial-gradient(circle at center, #a7e5d3 0%, #a8c8e8 50%, transparent 75%)',
-                }}
-                aria-hidden="true"
-              />
-
-              <div className="relative z-10 pb-4 border-b border-[#e7e5e4]">
-                <h2 className="font-serif font-light text-2xl sm:text-[28px] text-[#0c0a09] tracking-[-0.02em] leading-[1.15]">
-                  Paper Blueprint
-                </h2>
-                <p className="text-[14px] text-[#4e4e4e] mt-1 truncate">
-                  {name.trim() || 'Untitled Assessment Paper'}
-                </p>
-              </div>
-
-              {/* Key Metrics Grid */}
-              <div className="relative z-10 grid grid-cols-2 gap-3.5">
-                <div className="bg-white rounded-xl border border-[#e7e5e4] p-4">
-                  <span className="text-[11.5px] uppercase tracking-[0.08em] font-semibold text-[#777169]">
-                    Questions
+                {/* Bottom Quick-Add Bar */}
+                <div className="pt-2 flex flex-wrap items-center justify-between gap-4 border-t border-[#f0efed]">
+                  <span className="text-[14px] text-[#777169]">
+                    Need more questions in this paper?
                   </span>
-                  <p className="font-serif font-light text-3xl text-[#0c0a09] mt-1 tabular-nums">
-                    {questions.length}
-                  </p>
-                  <p className="text-[12.5px] text-[#4e4e4e] mt-1 tabular-nums">
-                    {objectiveCount} MCQ, {subjectiveCount} Subjective
-                  </p>
-                </div>
-
-                <div className="bg-white rounded-xl border border-[#e7e5e4] p-4">
-                  <span className="text-[11.5px] uppercase tracking-[0.08em] font-semibold text-[#777169]">
-                    Total Marks
-                  </span>
-                  <p className="font-serif font-light text-3xl text-[#0c0a09] mt-1 tabular-nums">
-                    {allocatedMarks}
-                    <span className="text-[15px] font-sans text-[#777169]"> / {maxMarks || 0}</span>
-                  </p>
-                  <p className="text-[12.5px] text-[#4e4e4e] mt-1 tabular-nums">
-                    {duration || 60} mins duration
-                  </p>
-                </div>
-              </div>
-
-              {/* Metadata Recap */}
-              <div className="relative z-10 flex flex-col gap-2.5 text-[14px] bg-white rounded-xl border border-[#e7e5e4] p-4">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-[#777169]">Subject</span>
-                  <span className="font-medium text-[#0c0a09] truncate">{subject.trim() || 'Not set'}</span>
-                </div>
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-[#777169]">Grade / Class</span>
-                  <span className="font-medium text-[#0c0a09] tabular-nums">Grade {grade || '-'}</span>
-                </div>
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-[#777169]">Output File</span>
-                  <span className="font-medium text-[#0c0a09] truncate max-w-45">{resolvedFilename}</span>
-                </div>
-              </div>
-
-              {/* Status Feedback Banner */}
-              {statusMessage.text && (
-                <div
-                  className={`relative z-10 p-4 rounded-xl border text-[13.5px] leading-relaxed ${statusMessage.type === 'error'
-                    ? 'bg-[#fef2f2] border-[#fecaca] text-[#dc2626]'
-                    : 'bg-white border-[#16a34a]/40 text-[#16a34a]'
-                    }`}
-                >
-                  <p className="font-medium">{statusMessage.text}</p>
-
-                  {generatedResult?.signedUrl && (
-                    <a
-                      href={generatedResult.signedUrl}
-                      download={generatedResult.filename || resolvedFilename}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="mt-3 w-full h-10 px-4 rounded-full bg-[#292524] hover:bg-[#0c0a09] text-white text-[13.5px] font-medium inline-flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+                  <div className="flex items-center gap-2.5">
+                    <button
+                      type="button"
+                      onClick={() => addQuestion('objective')}
+                      className="h-10 px-4 rounded-full bg-[#292524] hover:bg-[#0c0a09] text-white text-[13.5px] font-medium transition-all active:scale-[0.98]"
                     >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="1.75"
-                          d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                        />
-                      </svg>
-                      <span>Download Generated PDF</span>
-                    </a>
-                  )}
-                </div>
-              )}
-
-              {/* Primary Submit Button */}
-              <div className="relative z-10 flex flex-col gap-2.5">
-                <button
-                  type="submit"
-                  disabled={submitting || formattingLatex}
-                  className="w-full h-11 px-6 rounded-full bg-[#292524] hover:bg-[#0c0a09] text-white text-[15px] font-medium transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:pointer-events-none active:scale-[0.98]"
-                >
-                  {submitting ? (
-                    <span>Formatting LaTeX & Generating...</span>
-                  ) : (
-                    <span>Generate Paper</span>
-                  )}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleFormatLatex}
-                  disabled={submitting || formattingLatex}
-                  className="w-full h-10 px-4 rounded-full bg-white border border-[#d6d3d1] hover:border-[#0c0a09] text-[#0c0a09] text-[13.5px] font-medium transition-all disabled:opacity-50 disabled:pointer-events-none active:scale-[0.98]"
-                >
-                  {formattingLatex ? 'Formatting to LaTeX...' : 'Format Math to LaTeX'}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setShowJsonPreview(!showJsonPreview)}
-                  className="w-full h-10 px-4 rounded-full bg-transparent border border-[#d6d3d1] hover:border-[#0c0a09] text-[#292524] text-[13.5px] font-medium transition-all active:scale-[0.98]"
-                >
-                  {showJsonPreview ? 'Hide Request JSON' : 'Inspect Request JSON'}
-                </button>
-              </div>
-
-              {/* Collapsible JSON Inspector matching reqExample.json */}
-              {showJsonPreview && (
-                <div className="relative z-10 bg-white rounded-xl border border-[#e7e5e4] p-4">
-                  <div className="flex items-center justify-between pb-2 mb-2 border-b border-[#f0efed]">
-                    <span className="text-[12px] font-semibold uppercase tracking-[0.08em] text-[#777169]">
-                      POST /api/generate Payload
-                    </span>
+                      + Objective
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => addQuestion('subjective')}
+                      className="h-10 px-4 rounded-full bg-transparent border border-[#d6d3d1] hover:border-[#0c0a09] text-[#0c0a09] text-[13.5px] font-medium transition-all active:scale-[0.98]"
+                    >
+                      + Subjective
+                    </button>
                   </div>
-                  <pre className="text-[12px] text-[#292524] overflow-x-auto max-h-72 leading-relaxed font-mono">
-                    {JSON.stringify(requestPayload, null, 2)}
-                  </pre>
                 </div>
-              )}
+              </section>
             </div>
-          </aside>
-        </form>
+
+
+            <aside className="lg:col-span-4 lg:sticky lg:top-22 flex flex-col gap-6">
+
+              <div className="relative overflow-hidden bg-[#fafafa] rounded-3xl border border-[#e7e5e4] p-7 sm:p-8 shadow-[0_4px_16px_rgba(0,0,0,0.03)] flex flex-col gap-6">
+                <div
+                  className="absolute -top-20 -right-20 w-64 h-64 rounded-full opacity-40 blur-2xl pointer-events-none"
+                  style={{
+                    background: 'radial-gradient(circle at center, #a7e5d3 0%, #a8c8e8 50%, transparent 75%)',
+                  }}
+                  aria-hidden="true"
+                />
+
+                <div className="relative z-10 pb-4 border-b border-[#e7e5e4]">
+                  <h2 className="font-serif font-light text-2xl sm:text-[28px] text-[#0c0a09] tracking-[-0.02em] leading-[1.15]">
+                    Paper Blueprint
+                  </h2>
+                  <p className="text-[14px] text-[#4e4e4e] mt-1 truncate">
+                    {name.trim() || 'Untitled Assessment Paper'}
+                  </p>
+                </div>
+
+                {/* Key Metrics Grid */}
+                <div className="relative z-10 grid grid-cols-2 gap-3.5">
+                  <div className="bg-white rounded-xl border border-[#e7e5e4] p-4">
+                    <span className="text-[11.5px] uppercase tracking-[0.08em] font-semibold text-[#777169]">
+                      Questions
+                    </span>
+                    <p className="font-serif font-light text-3xl text-[#0c0a09] mt-1 tabular-nums">
+                      {questions.length}
+                    </p>
+                    <p className="text-[12.5px] text-[#4e4e4e] mt-1 tabular-nums">
+                      {objectiveCount} MCQ, {subjectiveCount} Subjective
+                    </p>
+                  </div>
+
+                  <div className="bg-white rounded-xl border border-[#e7e5e4] p-4">
+                    <span className="text-[11.5px] uppercase tracking-[0.08em] font-semibold text-[#777169]">
+                      Total Marks
+                    </span>
+                    <p className="font-serif font-light text-3xl text-[#0c0a09] mt-1 tabular-nums">
+                      {allocatedMarks}
+                      <span className="text-[15px] font-sans text-[#777169]"> / {maxMarks || 0}</span>
+                    </p>
+                    <p className="text-[12.5px] text-[#4e4e4e] mt-1 tabular-nums">
+                      {duration || 60} mins duration
+                    </p>
+                  </div>
+                </div>
+
+                {/* Metadata Recap */}
+                <div className="relative z-10 flex flex-col gap-2.5 text-[14px] bg-white rounded-xl border border-[#e7e5e4] p-4">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[#777169]">Subject</span>
+                    <span className="font-medium text-[#0c0a09] truncate">{subject.trim() || 'Not set'}</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[#777169]">Grade / Class</span>
+                    <span className="font-medium text-[#0c0a09] tabular-nums">Grade {grade || '-'}</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[#777169]">Output File</span>
+                    <span className="font-medium text-[#0c0a09] truncate max-w-45">{resolvedFilename}</span>
+                  </div>
+                </div>
+
+                {/* Status Feedback Banner */}
+                {statusMessage.text && (
+                  <div
+                    className={`relative z-10 p-4 rounded-xl border text-[13.5px] leading-relaxed ${statusMessage.type === 'error'
+                      ? 'bg-[#fef2f2] border-[#fecaca] text-[#dc2626]'
+                      : 'bg-white border-[#16a34a]/40 text-[#16a34a]'
+                      }`}
+                  >
+                    <p className="font-medium">{statusMessage.text}</p>
+
+                    {generatedResult?.signedUrl && (
+                      <a
+                        href={generatedResult.signedUrl}
+                        download={generatedResult.filename || resolvedFilename}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-3 w-full h-10 px-4 rounded-full bg-[#292524] hover:bg-[#0c0a09] text-white text-[13.5px] font-medium inline-flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="1.75"
+                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                          />
+                        </svg>
+                        <span>Download Generated PDF</span>
+                      </a>
+                    )}
+                  </div>
+                )}
+
+                {/* Primary Submit Button */}
+                <div className="relative z-10 flex flex-col gap-2.5">
+                  <button
+                    type="submit"
+                    disabled={submitting || formattingLatex}
+                    className="w-full h-11 px-6 rounded-full bg-[#292524] hover:bg-[#0c0a09] text-white text-[15px] font-medium transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:pointer-events-none active:scale-[0.98]"
+                  >
+                    {submitting ? (
+                      <span>Formatting LaTeX & Generating...</span>
+                    ) : (
+                      <span>Generate Paper</span>
+                    )}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleFormatLatex}
+                    disabled={submitting || formattingLatex}
+                    className="w-full h-10 px-4 rounded-full bg-white border border-[#d6d3d1] hover:border-[#0c0a09] text-[#0c0a09] text-[13.5px] font-medium transition-all disabled:opacity-50 disabled:pointer-events-none active:scale-[0.98]"
+                  >
+                    {formattingLatex ? 'Formatting to LaTeX...' : 'Format Math to LaTeX'}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setShowJsonPreview(!showJsonPreview)}
+                    className="w-full h-10 px-4 rounded-full bg-transparent border border-[#d6d3d1] hover:border-[#0c0a09] text-[#292524] text-[13.5px] font-medium transition-all active:scale-[0.98]"
+                  >
+                    {showJsonPreview ? 'Hide Request JSON' : 'Inspect Request JSON'}
+                  </button>
+                </div>
+
+                {/* Collapsible JSON Inspector matching reqExample.json */}
+                {showJsonPreview && (
+                  <div className="relative z-10 bg-white rounded-xl border border-[#e7e5e4] p-4">
+                    <div className="flex items-center justify-between pb-2 mb-2 border-b border-[#f0efed]">
+                      <span className="text-[12px] font-semibold uppercase tracking-[0.08em] text-[#777169]">
+                        POST /api/generate Payload
+                      </span>
+                    </div>
+                    <pre className="text-[12px] text-[#292524] overflow-x-auto max-h-72 leading-relaxed font-mono">
+                      {JSON.stringify(requestPayload, null, 2)}
+                    </pre>
+                  </div>
+                )}
+              </div>
+            </aside>
+          </form>
         )}
 
         {/* ─────────────────────────────────────────────────────────────────────────── */}
@@ -1484,13 +1528,12 @@ const TeacherDashboard = () => {
                     }
                   }}
                   aria-label="Upload evaluated student paper PDF"
-                  className={`relative z-10 rounded-2xl border-2 border-dashed p-8 text-center cursor-pointer transition-all flex flex-col items-center justify-center gap-3 min-h-60 ${
-                    isDraggingFile
-                      ? 'border-[#0c0a09] bg-white'
-                      : uploadedFile
-                        ? 'border-[#292524] bg-white'
-                        : 'border-[#d6d3d1] bg-white/80 hover:border-[#0c0a09] hover:bg-white'
-                  }`}
+                  className={`relative z-10 rounded-2xl border-2 border-dashed p-8 text-center cursor-pointer transition-all flex flex-col items-center justify-center gap-3 min-h-60 ${isDraggingFile
+                    ? 'border-[#0c0a09] bg-white'
+                    : uploadedFile
+                      ? 'border-[#292524] bg-white'
+                      : 'border-[#d6d3d1] bg-white/80 hover:border-[#0c0a09] hover:bg-white'
+                    }`}
                 >
                   <input
                     ref={fileInputRef}
@@ -1566,9 +1609,9 @@ const TeacherDashboard = () => {
                 {/* Live Selection Recap inside Left Card */}
                 <div className="relative z-10 bg-white rounded-xl border border-[#e7e5e4] p-4 flex flex-col gap-2.5 text-[13.5px]">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-[#777169]">Selected Paper</span>
+                    <span className="text-[#777169]">Paper</span>
                     <span className="font-medium text-[#0c0a09] truncate max-w-50">
-                      {selectedUploadPaper?.name || 'None'}
+                      {selectedUploadPaper?.name || 'Not selected'}
                     </span>
                   </div>
                   <div className="flex items-center justify-between gap-2">
@@ -1580,7 +1623,7 @@ const TeacherDashboard = () => {
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-[#777169]">Score Recorded</span>
                     <span className="font-medium text-[#0c0a09] tabular-nums">
-                      {uploadMarksObtained !== '' ? uploadMarksObtained : '–'} / {selectedUploadPaperMaxMarks} Marks
+                      {uploadMarksObtained !== '' ? uploadMarksObtained : '–'} / {selectedUploadPaper ? `${selectedUploadPaperMaxMarks} Marks` : '–'}
                       {uploadCalculatedPercentage !== null && ` (${uploadCalculatedPercentage}%)`}
                     </span>
                   </div>
@@ -1588,11 +1631,10 @@ const TeacherDashboard = () => {
 
                 {uploadStatus.text && (
                   <div
-                    className={`relative z-10 p-4 rounded-xl border text-[13.5px] leading-relaxed ${
-                      uploadStatus.type === 'error'
-                        ? 'bg-[#fef2f2] border-[#fecaca] text-[#dc2626]'
-                        : 'bg-white border-[#16a34a]/40 text-[#16a34a]'
-                    }`}
+                    className={`relative z-10 p-4 rounded-xl border text-[13.5px] leading-relaxed ${uploadStatus.type === 'error'
+                      ? 'bg-[#fef2f2] border-[#fecaca] text-[#dc2626]'
+                      : 'bg-white border-[#16a34a]/40 text-[#16a34a]'
+                      }`}
                   >
                     <p className="font-medium">{uploadStatus.text}</p>
                   </div>
@@ -1623,18 +1665,22 @@ const TeacherDashboard = () => {
                   {/* 1. Choose Examination Paper */}
                   <div className="sm:col-span-12 flex flex-col gap-2">
                     <label htmlFor="upload-select-paper" className="text-[14px] font-medium text-[#292524]">
-                      Select Examination Paper
+                      Examination Paper
                     </label>
                     <select
                       id="upload-select-paper"
                       value={uploadPaperId}
-                      onChange={(e) => setUploadPaperId(e.target.value)}
+                      onChange={(e) => {
+                        setUploadPaperId(e.target.value);
+                        setUploadStatus({ type: '', text: '' });
+                      }}
                       className="w-full h-11 px-4 rounded-lg bg-white border border-[#d6d3d1] text-[15px] text-[#0c0a09] outline-none focus:border-[#0c0a09] focus:ring-1 focus:ring-[#0c0a09] transition-all"
                       required
                     >
+                      <option value="">Select Paper</option>
                       {availablePapers.map((p) => (
                         <option key={p.id} value={p.id}>
-                          {p.name} — {p.subject || 'General'} (Class {p.grade || 5} · Max Marks: {p.max_marks || 50})
+                          {p.name}{p.subject ? ` — ${p.subject}` : ''}
                         </option>
                       ))}
                     </select>
@@ -1643,7 +1689,7 @@ const TeacherDashboard = () => {
                   {/* 2. Select Available Student */}
                   <div className="sm:col-span-12 flex flex-col gap-2">
                     <label htmlFor="upload-select-student" className="text-[14px] font-medium text-[#292524]">
-                      Select Student
+                      Student
                     </label>
                     <select
                       id="upload-select-student"
@@ -1655,6 +1701,7 @@ const TeacherDashboard = () => {
                       className="w-full h-11 px-4 rounded-lg bg-white border border-[#d6d3d1] text-[15px] text-[#0c0a09] outline-none focus:border-[#0c0a09] focus:ring-1 focus:ring-[#0c0a09] transition-all"
                       required
                     >
+                      <option value="">Select Student</option>
                       {availableStudents.map((stu) => (
                         <option key={stu.id} value={stu.id}>
                           {stu.name}
@@ -1670,7 +1717,10 @@ const TeacherDashboard = () => {
                         Total Marks Obtained
                       </label>
                       <span className="text-[12.5px] text-[#777169] tabular-nums">
-                        Max Marks: <strong className="font-medium text-[#0c0a09]">{selectedUploadPaperMaxMarks}</strong>
+                        Max Marks:{' '}
+                        <strong className="font-medium text-[#0c0a09]">
+                          {selectedUploadPaper ? selectedUploadPaperMaxMarks : '–'}
+                        </strong>
                       </span>
                     </div>
                     <div className="flex items-center gap-2.5">
@@ -1679,20 +1729,19 @@ const TeacherDashboard = () => {
                         type="number"
                         step="0.5"
                         min="0"
-                        max={selectedUploadPaperMaxMarks}
+                        max={selectedUploadPaperMaxMarks || undefined}
                         value={uploadMarksObtained}
                         onChange={(e) => setUploadMarksObtained(e.target.value)}
-                        placeholder={`0 – ${selectedUploadPaperMaxMarks}`}
+                        placeholder={selectedUploadPaper ? `0 – ${selectedUploadPaperMaxMarks}` : 'Enter marks'}
                         aria-invalid={Boolean(uploadMarksError)}
-                        className={`w-full h-11 px-4 rounded-lg bg-white border text-[15px] text-[#0c0a09] tabular-nums outline-none focus:ring-1 transition-all ${
-                          uploadMarksError
-                            ? 'border-[#dc2626] focus:border-[#dc2626] focus:ring-[#dc2626]'
-                            : 'border-[#d6d3d1] focus:border-[#0c0a09] focus:ring-[#0c0a09]'
-                        }`}
+                        className={`w-full h-11 px-4 rounded-lg bg-white border text-[15px] text-[#0c0a09] tabular-nums outline-none focus:ring-1 transition-all ${uploadMarksError
+                          ? 'border-[#dc2626] focus:border-[#dc2626] focus:ring-[#dc2626]'
+                          : 'border-[#d6d3d1] focus:border-[#0c0a09] focus:ring-[#0c0a09]'
+                          }`}
                         required
                       />
                       <span className="text-[14.5px] font-medium text-[#777169] tabular-nums shrink-0">
-                        / {selectedUploadPaperMaxMarks}
+                        / {selectedUploadPaper ? selectedUploadPaperMaxMarks : '–'}
                       </span>
                     </div>
                     {uploadMarksError ? (

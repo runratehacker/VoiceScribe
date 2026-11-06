@@ -1,5 +1,5 @@
 import express from 'express';
-import { getQuestions, getAllPapers } from '../controllers/formController.js';
+import { getQuestions, getAllPapers, getAllStudents } from '../controllers/formController.js';
 import generatePaper from '../controllers/generateController.js';
 import downloadController from '../controllers/downloadController.js';
 import formatLatexController from '../controllers/latexController.js';
@@ -31,6 +31,7 @@ router.post('/download/:paperid', downloadController);
 router.post('/format-latex', formatLatexController);
 router.post('/generate', generatePaper);
 router.post('/upload', upload.single('pdf'), uploadPaper);
+router.get('/students', getAllStudents);
 
 
 export default router;

@@ -22,7 +22,7 @@ import paperRouter from './routes/paperRoute.js';
 app.use('/api', paperRouter);
 
 
-import liveRouter from "./routes/liveRoute.js";
+import liveRouter from "./routes/LiveRoute.js";
 app.use("/api", liveRouter);
 
 import authRouter from './routes/authRoute.js';

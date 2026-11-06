@@ -1,8 +1,8 @@
 import React from 'react'
-import VoiceAssistantUI from './Frontpage'
-import Login from './components/Login'
-import StudentDashboard from './components/StudentDashboard'
-import TeacherDashboard from './components/TeacherDashboard'
+import VoiceAssistantUI from './pages/ExamSession'
+import Login from './pages/Login'
+import StudentDashboard from './pages/StudentDashboard'
+import TeacherDashboard from './pages/TeacherDashboard'
 import { Route, Routes, Navigate } from 'react-router-dom'
 import { useAuth } from './context/AuthContext'
 

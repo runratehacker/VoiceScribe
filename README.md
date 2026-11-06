@@ -119,6 +119,13 @@ npm run dev
 │   │   └── icons.svg
 │   ├── src
 │   │   ├── components
+│   │   │   ├── student
+│   │   │   │   ├── ActiveExamBanner.jsx
+│   │   │   │   ├── AvailablePapersGrid.jsx
+│   │   │   │   └── CompletedTranscriptsSection.jsx
+│   │   │   ├── teacher
+│   │   │   │   ├── ComposePaperSection.jsx
+│   │   │   │   └── UploadEvaluatedPaperSection.jsx
 │   │   │   ├── ExamCompletedScreen.jsx
 │   │   │   ├── FormList.jsx
 │   │   │   ├── Header.jsx
@@ -146,6 +153,11 @@ npm run dev
 │   │   │   └── useQuestionNavigation.js
 │   │   ├── lib
 │   │   │   └── utils.js
+│   │   ├── pages
+│   │   │   ├── ExamSession.jsx
+│   │   │   ├── Login.jsx
+│   │   │   ├── StudentDashboard.jsx
+│   │   │   └── TeacherDashboard.jsx
 │   │   ├── utils
 │   │   │   ├── audioUtils.js
 │   │   │   └── waveformUtils.js

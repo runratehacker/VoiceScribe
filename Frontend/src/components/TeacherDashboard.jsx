@@ -60,6 +60,25 @@ const formatFileSize = (bytes) => {
   return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
 };
 
+const formatEvaluatedDate = (rawDate) => {
+
+  if (!rawDate) return '—';
+
+  const normalized = String(rawDate).trim().replace(' ', 'T');
+  const parsed = new Date(normalized);
+
+  if (Number.isNaN(parsed.getTime())) {
+    return String(rawDate).split(' ')[0];
+  }
+
+  return parsed.toLocaleDateString('en-US', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+
+};
+
 const TeacherDashboard = () => {
   const navigate = useNavigate();
   const { logout, user } = useAuth();
@@ -120,6 +139,31 @@ const TeacherDashboard = () => {
   const [uploadingPaper, setUploadingPaper] = useState(false);
   const [uploadStatus, setUploadStatus] = useState({ type: '', text: '' });
   const [uploadedEvaluatedList, setUploadedEvaluatedList] = useState([]);
+  const [evaluatedPapersRaw, setEvaluatedPapersRaw] = useState({
+    signedUrl: [],
+    paperids: [],
+    student_ids: [],
+    total_marks: [],
+    created_at: [],
+  });
+
+  const fetchTeacherEvaluatedPapers = async () => {
+    const teacherId = user?.id || 1;
+    try {
+      const evalRes = await axios.get(`${API_BASE_URL}/api/evaluated/teacher/${teacherId}`);
+      if (evalRes.data) {
+        setEvaluatedPapersRaw({
+          signedUrl: Array.isArray(evalRes.data.signedUrl) ? evalRes.data.signedUrl : [],
+          paperids: Array.isArray(evalRes.data.paperids) ? evalRes.data.paperids : [],
+          student_ids: Array.isArray(evalRes.data.student_ids) ? evalRes.data.student_ids : [],
+          total_marks: Array.isArray(evalRes.data.total_marks) ? evalRes.data.total_marks : [],
+          created_at: Array.isArray(evalRes.data.created_at) ? evalRes.data.created_at : [],
+        });
+      }
+    } catch (err) {
+      console.error('Failed to fetch teacher evaluated papers:', err);
+    }
+  };
 
   const fetchAvailablePapers = async () => {
     setLoadingPapers(true);
@@ -190,18 +234,35 @@ const TeacherDashboard = () => {
       } catch (err) {
         console.error('Failed to fetch students:', err);
       }
+
+      const teacherId = user?.id || 1;
+      try {
+        const evalRes = await axios.get(`${API_BASE_URL}/api/evaluated/teacher/${teacherId}`);
+        if (isMounted && evalRes.data) {
+          setEvaluatedPapersRaw({
+            signedUrl: Array.isArray(evalRes.data.signedUrl) ? evalRes.data.signedUrl : [],
+            paperids: Array.isArray(evalRes.data.paperids) ? evalRes.data.paperids : [],
+            student_ids: Array.isArray(evalRes.data.student_ids) ? evalRes.data.student_ids : [],
+            total_marks: Array.isArray(evalRes.data.total_marks) ? evalRes.data.total_marks : [],
+            created_at: Array.isArray(evalRes.data.created_at) ? evalRes.data.created_at : [],
+          });
+        }
+      } catch (err) {
+        console.error('Failed to fetch teacher evaluated papers:', err);
+      }
     };
     fetchInitialData();
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [user?.id]);
 
-  // Refresh available papers and students when switching to the Upload Paper tab
+  // Refresh available papers, students, and evaluated papers when switching to the Upload Paper tab
   useEffect(() => {
     if (activeView === 'upload') {
       fetchAvailablePapers();
       fetchAvailableStudents();
+      fetchTeacherEvaluatedPapers();
     }
   }, [activeView]);
 
@@ -559,6 +620,42 @@ const TeacherDashboard = () => {
     [availableStudents, uploadStudentId]
   );
 
+  // Combine database evaluated papers from /api/evaluated/teacher/:teacherid with session uploads
+  const displayedEvaluatedPapers = useMemo(() => {
+    const {
+      signedUrl = [],
+      paperids = [],
+      student_ids = [],
+      total_marks = [],
+      created_at = [],
+    } = evaluatedPapersRaw;
+    const dbRecords = signedUrl.map((url, idx) => {
+      const paperId = paperids[idx];
+      const studentId = student_ids[idx];
+      const marks = Number(total_marks[idx]) || 0;
+      const rawDate = created_at[idx];
+      const matchedPaper = availablePapers.find((p) => String(p.id) === String(paperId));
+      const matchedStudent = availableStudents.find((s) => String(s.id) === String(studentId));
+      const maxMarks = Number(matchedPaper?.max_marks) || 50;
+      const percentage = maxMarks > 0 ? Math.round((marks / maxMarks) * 100) : 0;
+      return {
+        id: `EVAL-DB-${paperId ?? idx}-${idx}`,
+        paperId,
+        paperName: matchedPaper?.name || `Paper #${paperId ?? idx + 1}`,
+        subject: matchedPaper?.subject || 'General',
+        grade: matchedPaper?.grade || 5,
+        studentId,
+        studentName: matchedStudent?.name || null,
+        marksObtained: marks,
+        maxMarks,
+        percentage,
+        fileUrl: url,
+        uploadedAt: formatEvaluatedDate(rawDate),
+      };
+    });
+    return dbRecords.length > 0 ? dbRecords : uploadedEvaluatedList;
+  }, [evaluatedPapersRaw, availablePapers, availableStudents, uploadedEvaluatedList]);
+
   const processSelectedFile = (file) => {
     if (!file) return;
     setUploadStatus({ type: '', text: '' });
@@ -658,6 +755,7 @@ const TeacherDashboard = () => {
       };
 
       setUploadedEvaluatedList((prev) => [newRecord, ...prev]);
+      await fetchTeacherEvaluatedPapers();
       setUploadStatus({
         type: 'success',
         text:
@@ -1787,34 +1885,49 @@ const TeacherDashboard = () => {
             </form>
 
             {/* Uploaded Evaluated Papers Log */}
-            {uploadedEvaluatedList.length > 0 && (
-              <div className="bg-white rounded-2xl border border-[#e7e5e4] p-6 sm:p-8 shadow-[0_4px_16px_rgba(0,0,0,0.02)] flex flex-col gap-5">
-                <div className="flex items-center justify-between pb-4 border-b border-[#f0efed]">
-                  <div>
-                    <h3 className="font-serif font-light text-2xl text-[#0c0a09] tracking-[-0.02em]">
-                      Uploaded Evaluated Papers ({uploadedEvaluatedList.length})
-                    </h3>
-                    <p className="text-[13.5px] text-[#777169] mt-0.5">
-                      Graded scripts recorded during this session.
-                    </p>
-                  </div>
+            <div className="bg-white rounded-2xl border border-[#e7e5e4] p-6 sm:p-8 shadow-[0_4px_16px_rgba(0,0,0,0.02)] flex flex-col gap-5">
+              <div className="flex items-center justify-between pb-4 border-b border-[#f0efed]">
+                <div>
+                  <h3 className="font-serif font-light text-2xl text-[#0c0a09] tracking-[-0.02em]">
+                    Evaluated Papers ({displayedEvaluatedPapers.length})
+                  </h3>
+                  <p className="text-[13.5px] text-[#777169] mt-0.5">
+                    Graded answer scripts stored in the database.
+                  </p>
                 </div>
+              </div>
 
+              {displayedEvaluatedPapers.length === 0 ? (
+                <div className="py-6 text-center">
+                  <p className="text-[14px] text-[#777169]">No evaluated papers uploaded yet.</p>
+                </div>
+              ) : (
                 <div className="divide-y divide-[#f0efed]">
-                  {uploadedEvaluatedList.map((item) => (
+                  {displayedEvaluatedPapers.map((item) => (
                     <div
                       key={item.id}
                       className="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
                     >
                       <div className="flex flex-col gap-1">
-                        <div className="flex items-center gap-2.5">
+                        <div className="flex items-center gap-2.5 flex-wrap">
                           <span className="text-[15px] font-medium text-[#0c0a09]">
-                            {item.studentName}
+                            {item.paperName}
                           </span>
-                          <span className="text-[13px] text-[#777169]">· {item.paperName}</span>
+                          {item.subject && (
+                            <span className="text-[13px] text-[#777169]">· {item.subject}</span>
+                          )}
                         </div>
                         <p className="text-[13px] text-[#777169]">
-                          File: <span className="text-[#292524] font-medium">{item.fileName}</span>
+                          Student ID:{' '}
+                          <span className="text-[#292524] font-medium tabular-nums">
+                            {item.studentId ?? '—'}
+                          </span>
+                          {item.studentName && (
+                            <span className="text-[#777169]"> ({item.studentName})</span>
+                          )}
+                          {item.uploadedAt && (
+                            <span className="text-[#777169]"> · {item.uploadedAt}</span>
+                          )}
                         </p>
                       </div>
 
@@ -1832,17 +1945,21 @@ const TeacherDashboard = () => {
                             href={item.fileUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="h-9 px-4 rounded-full bg-white border border-[#d6d3d1] hover:border-[#0c0a09] text-[#0c0a09] text-[13px] font-medium inline-flex items-center transition-all active:scale-[0.98]"
+                            download
+                            className="h-9 px-4 rounded-full bg-white border border-[#d6d3d1] hover:border-[#0c0a09] hover:bg-[#292524] text-[#0c0a09] hover:text-white text-[13px] font-medium inline-flex items-center gap-1.5 transition-all active:scale-[0.98]"
                           >
-                            View PDF
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.75" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                            </svg>
+                            <span>Download PDF</span>
                           </a>
                         )}
                       </div>
                     </div>
                   ))}
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </section>
         )}
       </main>

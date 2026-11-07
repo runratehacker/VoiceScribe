@@ -12,6 +12,25 @@ const ORB_GRADIENTS = [
   'radial-gradient(circle at center, #a7e5d3 0%, #a8c8e8 50%, transparent 75%)',
 ];
 
+const formatEvaluatedDate = (rawDate) => {
+
+  if (!rawDate) return 'Graded';
+
+  const normalized = String(rawDate).trim().replace(' ', 'T');
+  const parsed = new Date(normalized);
+
+  if (Number.isNaN(parsed.getTime())) {
+    return String(rawDate).split(' ')[0];
+  }
+
+  return parsed.toLocaleDateString('en-US', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+
+};
+
 const StudentDashboard = () => {
   const [forms, setForms] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -27,6 +46,13 @@ const StudentDashboard = () => {
     completed: 0,
     pending: 0,
     formId: null
+  });
+
+  const [evaluatedPapersRaw, setEvaluatedPapersRaw] = useState({
+    signedUrl: [],
+    paperids: [],
+    total_marks: [],
+    created_at: [],
   });
 
   const navigate = useNavigate();
@@ -131,6 +157,21 @@ const StudentDashboard = () => {
             });
           }
         }
+        const studentId = user?.id || 2;
+        try {
+          const evalRes = await fetch(`${API_BASE_URL}/api/evaluated/student/${studentId}`);
+          if (evalRes.ok) {
+            const evalData = await evalRes.json();
+            setEvaluatedPapersRaw({
+              signedUrl: Array.isArray(evalData.signedUrl) ? evalData.signedUrl : [],
+              paperids: Array.isArray(evalData.paperids) ? evalData.paperids : [],
+              total_marks: Array.isArray(evalData.total_marks) ? evalData.total_marks : [],
+              created_at: Array.isArray(evalData.created_at) ? evalData.created_at : [],
+            });
+          }
+        } catch (evalErr) {
+          console.error('Error fetching evaluated papers:', evalErr);
+        }
       } catch (err) {
         setError(err.message);
       } finally {
@@ -139,21 +180,34 @@ const StudentDashboard = () => {
     };
 
     fetchForms();
-  }, []);
+  }, [user?.id]);
 
   const handleLogout = () => {
     logout();
     navigate('/');
   };
 
-  // Attempted papers history dataset
-  const attemptedPapers = [
-    { id: 101, name: 'Factorization Worksheet', tag: 'Mathematics', date: 'Oct 24', score: 92, total: 100, status: 'Graded' },
-    { id: 102, name: 'Physics Kinetics', tag: 'Science', date: 'Oct 12', score: 85, total: 100, status: 'Graded' },
-    { id: 103, name: 'Grammar Assessment', tag: 'English', date: 'Oct 05', score: 78, total: 100, status: 'Graded' },
-    { id: 104, name: 'World History Midterm', tag: 'History', date: 'Sep 28', score: 95, total: 100, status: 'Graded' },
-    { id: 105, name: 'Basic Chemistry Lab', tag: 'Science', date: 'Sep 15', score: 88, total: 100, status: 'Graded' }
-  ];
+  // Evaluated papers mapped from /api/evaluated/student/:studentid
+  const attemptedPapers = useMemo(() => {
+    const { signedUrl = [], paperids = [], total_marks = [], created_at = [] } = evaluatedPapersRaw;
+    return signedUrl.map((url, idx) => {
+      const paperId = paperids[idx];
+      const marks = total_marks[idx];
+      const rawDate = created_at[idx];
+      const matchedPaper = forms.find((f) => String(f.id) === String(paperId));
+      return {
+        id: `eval-${paperId ?? idx}-${idx}`,
+        paperId,
+        name: matchedPaper?.name || `Paper #${paperId ?? idx + 1}`,
+        tag: matchedPaper?.subject || matchedPaper?.tag || 'Assessment',
+        date: formatEvaluatedDate(rawDate || matchedPaper?.end_date),
+        score: marks ?? 0,
+        total: Number(matchedPaper?.max_marks) || 50,
+        status: 'Graded',
+        signedUrl: url,
+      };
+    });
+  }, [evaluatedPapersRaw, forms]);
 
   // Categories list dynamically including any subject from the papers table
   const categories = useMemo(() => {
@@ -196,7 +250,7 @@ const StudentDashboard = () => {
 
   const displayName = user?.name || user?.username || 'Student';
   const latestTranscript = attemptedPapers[0];
-  const archivedTranscripts = attemptedPapers.slice(1);
+  const archivedTranscripts = attemptedPapers;
 
   return (
     <div className="min-h-dvh w-full flex flex-col bg-[#f5f5f5] text-[#292524] relative overflow-x-hidden font-sans selection:bg-[#292524] selection:text-white">
@@ -717,15 +771,18 @@ const StudentDashboard = () => {
                     <span className="w-1.5 h-1.5 rounded-full bg-[#0c0a09]" />
                     Transcript ready for PDF export
                   </span>
-                  <button
-                    onClick={() => alert(`Downloading certified transcript: ${latestTranscript.name}`)}
+                  <a
+                    href={latestTranscript.signedUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    download
                     className="h-9 px-4 rounded-full bg-[#292524] hover:bg-[#0c0a09] text-white text-[13px] font-medium transition-all flex items-center gap-2 active:scale-[0.98] shrink-0"
                   >
                     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.75" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                     </svg>
                     <span>Download PDF</span>
-                  </button>
+                  </a>
                 </div>
               </div>
             )}
@@ -741,53 +798,62 @@ const StudentDashboard = () => {
                 </span>
               </div>
 
-              <div className="divide-y divide-[#f0efed]">
-                {archivedTranscripts.map((paper) => (
-                  <div
-                    key={paper.id}
-                    className="py-3.5 last:pb-0 flex items-center justify-between gap-4 group"
-                  >
-                    <div className="flex items-center gap-3.5 min-w-0">
-                      {/*  voice-icon-circular (32px) */}
-                      <div className="w-8 h-8 rounded-full bg-[#f0efed] group-hover:bg-[#292524] text-[#292524] group-hover:text-white transition-colors flex items-center justify-center shrink-0">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
+              {archivedTranscripts.length === 0 ? (
+                <div className="py-8 text-center">
+                  <p className="text-[14px] text-[#777169]">No evaluated papers available yet.</p>
+                </div>
+              ) : (
+                <div className="divide-y divide-[#f0efed]">
+                  {archivedTranscripts.map((paper) => (
+                    <div
+                      key={paper.id}
+                      className="py-3.5 last:pb-0 flex items-center justify-between gap-4 group"
+                    >
+                      <div className="flex items-center gap-3.5 min-w-0">
+                        {/*  voice-icon-circular (32px) */}
+                        <div className="w-8 h-8 rounded-full bg-[#f0efed] group-hover:bg-[#292524] text-[#292524] group-hover:text-white transition-colors flex items-center justify-center shrink-0">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
+                        </div>
+
+                        <div className="min-w-0">
+                          <h4 className="text-[15px] font-medium text-[#0c0a09] truncate">
+                            {paper.name}
+                          </h4>
+                          <p className="text-[13px] text-[#777169] mt-0.5">
+                            {paper.tag} · {paper.date}
+                          </p>
+                        </div>
                       </div>
 
-                      <div className="min-w-0">
-                        <h4 className="text-[15px] font-medium text-[#0c0a09] truncate">
-                          {paper.name}
-                        </h4>
-                        <p className="text-[13px] text-[#777169] mt-0.5">
-                          {paper.tag} · {paper.date}
-                        </p>
+                      <div className="flex items-center gap-3.5 shrink-0">
+                        <div className="text-right">
+                          <span className="font-serif font-light text-[20px] text-[#0c0a09] tabular-nums">
+                            {paper.score}
+                          </span>
+                          <span className="text-[12px] text-[#777169]">/{paper.total}</span>
+                        </div>
+
+                        <a
+                          href={paper.signedUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          download
+                          className="h-8 px-3 rounded-full border border-[#d6d3d1] hover:border-[#0c0a09] hover:bg-[#292524] text-[#0c0a09] hover:text-white transition-all flex items-center gap-1.5 text-[12px] font-medium active:scale-[0.98]"
+                          title={`Download PDF for ${paper.name}`}
+                          aria-label={`Download PDF for ${paper.name}`}
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.75" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                          </svg>
+                          <span className="hidden sm:inline">PDF</span>
+                        </a>
                       </div>
                     </div>
-
-                    <div className="flex items-center gap-3.5 shrink-0">
-                      <div className="text-right">
-                        <span className="font-serif font-light text-[20px] text-[#0c0a09] tabular-nums">
-                          {paper.score}
-                        </span>
-                        <span className="text-[12px] text-[#777169]">/{paper.total}</span>
-                      </div>
-
-                      <button
-                        onClick={() => alert(`Downloading certified transcript: ${paper.name}`)}
-                        className="h-8 px-3 rounded-full border border-[#d6d3d1] hover:border-[#0c0a09] hover:bg-[#292524] text-[#0c0a09] hover:text-white transition-all flex items-center gap-1.5 text-[12px] font-medium active:scale-[0.98]"
-                        title={`Download PDF for ${paper.name}`}
-                        aria-label={`Download PDF for ${paper.name}`}
-                      >
-                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.75" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                        </svg>
-                        <span className="hidden sm:inline">PDF</span>
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
 
               {/* Bottom Re-evaluation Request Row */}
               <div className="mt-6 pt-4 border-t border-[#e7e5e4] flex items-center justify-between text-[13px] text-[#777169]">

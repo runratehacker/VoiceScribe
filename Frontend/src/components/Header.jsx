@@ -6,13 +6,23 @@ const Header = ({
   progressCompleted = 0,
   progressPending = 0,
   currentQuestionIndex = 0,
-  onGoToQuestion
+  onGoToQuestion,
+  onEndExam,
+  isCompleted = false
 }) => {
   const navigate = useNavigate();
   const [showExitModal, setShowExitModal] = useState(false);
+  const [showEndExamModal, setShowEndExamModal] = useState(false);
 
   const handleExitConfirm = () => {
     navigate('/fillform');
+  };
+
+  const handleEndExamConfirm = () => {
+    setShowEndExamModal(false);
+    if (onEndExam) {
+      onEndExam();
+    }
   };
 
   const percentage = progressTotal > 0 ? Math.round((progressCompleted / progressTotal) * 100) : 0;
@@ -56,24 +66,34 @@ const Header = ({
           </div>
         )}
 
-        {/* Right: Actions (Distinct Intents, No Duplicate CTA) */}
-        <div className="flex items-center gap-3 shrink-0">
-          <div className="hidden lg:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#fafafa] border border-[#f0efed] text-[12px] text-[#777169] font-medium select-none">
+        {/* Right: Actions (Distinct Intents, top-nav Secondary + Primary CTA pattern) */}
+        <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
+          <div className="hidden xl:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#fafafa] border border-[#f0efed] text-[12px] text-[#777169] font-medium select-none">
             <span className="w-1.5 h-1.5 rounded-full bg-[#0c0a09]" />
             <span>Auto-saved</span>
           </div>
 
           <button
             onClick={() => setShowExitModal(true)}
-            className="h-9 px-4.5 bg-[#292524] hover:bg-[#0c0a09] rounded-full text-[13.5px] font-medium text-white transition-all shadow-xs active:scale-[0.98] flex items-center gap-2"
+            className="h-8 px-4.5 rounded-full bg-transparent border border-[#d6d3d1] hover:border-[#0c0a09] text-[14px] font-medium text-[#0c0a09] transition-all active:scale-[0.98] flex items-center gap-2 cursor-pointer"
             title="Return to Student Dashboard"
           >
-            <span>End Session</span>
+            <span>Exit to Desk</span>
           </button>
+
+          {!isCompleted && onEndExam && (
+            <button
+              onClick={() => setShowEndExamModal(true)}
+              className="h-8 px-4.5 bg-[#292524] hover:bg-[#0c0a09] rounded-full text-[14px] font-medium text-white transition-all shadow-xs active:scale-[0.98] flex items-center gap-2 cursor-pointer"
+              title="Finish and submit examination"
+            >
+              <span>End Exam</span>
+            </button>
+          )}
         </div>
       </header>
 
-      {/* Confirmation Modal for End Session */}
+      {/* Confirmation Modal for Exit to Desk */}
       {showExitModal && (
         <div className="fixed inset-0 bg-[#0c0a09]/40 backdrop-blur-xs flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl border border-[#e7e5e4] shadow-[0_16px_40px_rgba(0,0,0,0.12)] p-7 max-w-md w-full relative text-left">
@@ -99,6 +119,38 @@ const Header = ({
                 className="h-10 px-5 rounded-full bg-[#292524] hover:bg-[#0c0a09] text-white text-[13.5px] font-medium transition-all shadow-xs active:scale-[0.98]"
               >
                 Exit to Desk
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirmation Modal for End Exam */}
+      {showEndExamModal && (
+        <div className="fixed inset-0 bg-[#0c0a09]/40 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl border border-[#e7e5e4] shadow-[0_16px_40px_rgba(0,0,0,0.12)] p-7 max-w-md w-full relative text-left">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#f0efed] text-[#0c0a09] text-[11px] font-semibold uppercase tracking-[0.08em] mb-3">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#0c0a09]" />
+              Final Submission
+            </div>
+            <h3 className="font-serif font-light text-2xl sm:text-[28px] text-[#0c0a09] mb-2.5 tracking-[-0.02em] leading-snug">
+              End Examination Now?
+            </h3>
+            <p className="text-[14.5px] text-[#4e4e4e] leading-relaxed mb-6 font-normal">
+              You have answered <span className="font-medium text-[#0c0a09] tabular-nums">{progressCompleted} of {progressTotal}</span> questions{progressPending > 0 ? ` (${progressPending} remaining)` : ''}. Ending the exam will take you to the completion summary where you can download your transcript.
+            </p>
+            <div className="flex items-center justify-end gap-3">
+              <button
+                onClick={() => setShowEndExamModal(false)}
+                className="h-10 px-5 rounded-full bg-white border border-[#d6d3d1] hover:border-[#0c0a09] text-[13.5px] font-medium text-[#292524] transition-all active:scale-[0.98] cursor-pointer"
+              >
+                Keep Answering
+              </button>
+              <button
+                onClick={handleEndExamConfirm}
+                className="h-10 px-5 rounded-full bg-[#292524] hover:bg-[#0c0a09] text-white text-[13.5px] font-medium transition-all shadow-xs active:scale-[0.98] cursor-pointer"
+              >
+                End Exam
               </button>
             </div>
           </div>

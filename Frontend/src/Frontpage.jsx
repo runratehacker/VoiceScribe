@@ -34,6 +34,7 @@ const VoiceAssistantUI = () => {
     handleNext,
     handlePrev,
     handleGoToQuestion,
+    handleEndExam,
     isCompleted
   } = useQuestionNavigation(formFields);
 
@@ -195,6 +196,8 @@ const VoiceAssistantUI = () => {
           progressPending={progressPending}
           currentQuestionIndex={currentQuestionIndex}
           onGoToQuestion={handleGoToQuestion}
+          onEndExam={handleEndExam}
+          isCompleted={isCompleted}
         />
 
         {/* Skeletal Loaders Matching Question Studio Split Layout */}
@@ -287,7 +290,8 @@ const VoiceAssistantUI = () => {
           onPrev={!isCompleted ? handlePrev : null}
           onNext={!isCompleted ? handleNext : null}
           hasPrev={currentQuestionIndex > 0}
-          hasNext={currentQuestionIndex < totalQuestions - 1}
+          hasNext={totalQuestions > 0 && currentQuestionIndex < totalQuestions}
+          isLastQuestion={totalQuestions > 0 && currentQuestionIndex === totalQuestions - 1}
         />
       </div>
     </div>

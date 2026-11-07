@@ -57,6 +57,12 @@ export const useQuestionNavigation = (formFields) => {
 
   const isCompleted = totalQuestions > 0 && currentQuestionIndex === totalQuestions;
 
+  const handleEndExam = () => {
+    if (totalQuestions > 0) {
+      setCurrentQuestionIndex(totalQuestions);
+    }
+  };
+
   return {
     currentQuestionIndex,
     totalQuestions,
@@ -67,6 +73,7 @@ export const useQuestionNavigation = (formFields) => {
     handleNext,
     handlePrev,
     handleGoToQuestion,
+    handleEndExam,
     isCompleted
   };
 };

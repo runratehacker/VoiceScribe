@@ -7,7 +7,8 @@ const VoiceFooter = ({
   onPrev,
   onNext,
   hasPrev = false,
-  hasNext = false
+  hasNext = false,
+  isLastQuestion = false
 }) => {
   return (
     <footer className="w-full max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 pt-2 pb-1 shrink-0 z-20">
@@ -78,21 +79,27 @@ const VoiceFooter = ({
         </button>
       </div>
 
-      {/* Right: Next Question Navigation Pill */}
+      {/* Right: Next Question / End Exam Navigation Pill */}
       {onNext && (
         <button
           onClick={onNext}
           disabled={!hasNext}
-          className={`h-11 px-6 rounded-full transition-all text-[13.5px] font-medium flex items-center gap-2 shrink-0 ${!hasNext
+          className={`h-11 px-6 rounded-full transition-all text-[14px] font-medium flex items-center gap-2 shrink-0 cursor-pointer ${!hasNext
               ? 'bg-[#f0efed] text-[#777169] opacity-60 cursor-not-allowed border border-transparent'
               : 'bg-[#292524] hover:bg-[#0c0a09] text-white shadow-xs active:scale-[0.98]'
             }`}
-          aria-label="Next Question"
+          aria-label={isLastQuestion ? 'End Exam' : 'Next Question'}
         >
-          <span>Next</span>
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
-          </svg>
+          <span>{isLastQuestion ? 'End Exam' : 'Next'}</span>
+          {isLastQuestion ? (
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+            </svg>
+          ) : (
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+            </svg>
+          )}
         </button>
       )}
 

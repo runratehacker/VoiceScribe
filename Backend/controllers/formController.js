@@ -49,4 +49,50 @@ const getAllStudents = async (req, res) => {
     }
 
 }
-export { getQuestions, getAllPapers, getAllStudents }
+
+const getRecordedPapers = async (req, res) => {
+
+    try {
+
+        const { teacherid } = req.params;
+
+        const teacher_id = parseInt(teacherid);
+
+        const { error, data } = await supabase.from("RECORDED_PAPER").select("filename,student_id,paper_id").eq("teacher_id", teacher_id);
+
+        if (error) {
+            console.log(error);
+            return res.status(500).json({ message: "Failed to fetch filename of Recorded Paper" });
+        }
+
+        const filePaths = data.map(item => `public/${item.filename}`);
+
+        const { data: paperData, error: paperError } = await supabase.storage.from('recordedPapers')
+            .createSignedUrls(filePaths, 60, { download: true });
+
+        if (paperError) {
+            return res.status(500).json({ message: "Failed to fetch signed URL of Recorded Paper" });
+        }
+
+        const paperids = data.map(item => item.paper_id);
+        const studentids = data.map(item => item.student_id);
+
+        const urls = paperData.map(item => item.signedUrl);
+
+        return res.status(200).json({
+            message: 'Recorded Paper fetched successfully',
+            paperids,
+            studentids,
+            signedUrl: urls
+        });
+
+
+
+    } catch (error) {
+        console.log(error.message);
+        return res.status(500).json({ message: "Server Error" });
+    }
+}
+
+
+export { getQuestions, getAllPapers, getAllStudents, getRecordedPapers }

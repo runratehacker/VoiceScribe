@@ -12,11 +12,15 @@ import { useQuestionNavigation } from './hooks/useQuestionNavigation';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import { API_BASE_URL } from './config';
+import { useAuth } from './context/AuthContext';
 
 
 const VoiceAssistantUI = () => {
   const { formid } = useParams();
+  const { user } = useAuth();
   const { formFields, onFieldFilled, onFieldReset } = useFormFields(formid);
+
+  const studentId = user?.id || (localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user'))?.id : null) || 2;
 
   useEffect(() => {
     if (formid) {
@@ -96,7 +100,8 @@ const VoiceAssistantUI = () => {
       });
 
       const response = await axios.post(`${API_BASE_URL}/api/download/${formid}`, {
-        formFields: payloadFields
+        formFields: payloadFields,
+        studentid: studentId
       });
 
       if (response.data?.signedUrl) {

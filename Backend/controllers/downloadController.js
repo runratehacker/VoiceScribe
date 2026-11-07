@@ -6,7 +6,9 @@ const downloadController = async (req, res) => {
 
     try {
 
+        const studentId = parseInt(req.body.studentid);
         const paperId = parseInt(req.params.paperid);
+
         const { formFields } = req.body;
         let fields = {};
 
@@ -71,13 +73,15 @@ const downloadController = async (req, res) => {
         // 3. Fetch filename from PAPER table in Supabase
         const { data: paper, error: paperError } = await supabase
             .from('PAPER')
-            .select('filename')
+            .select('filename,teacher_id')
             .eq('id', paperId)
             .single();
 
         if (paperError || !paper || !paper.filename) {
             return res.status(404).json({ error: 'Paper or filename not found in database' });
         }
+
+        const teacher_id = parseInt(paper.teacher_id);
 
         // 4. Download Template PDF from Supabase Storage ('papers' bucket)
         const filename = paper.filename;
@@ -189,7 +193,8 @@ const downloadController = async (req, res) => {
         const pdfBytes = await pdfDoc.save();
         const outputFilename = `filled_${filename}`;
 
-        let { data: saveData, error: saveError } = await supabase.storage.from('recordedPapers').upload(`public/${outputFilename}`,
+        let { data: saveData, error: saveError } = await supabase.storage.from('recordedPapers').upload(`public/${outputFilename}_${studentId}`,
+
             Buffer.from(pdfBytes), {
             contentType: 'application/pdf',
             upsert: true,
@@ -201,13 +206,25 @@ const downloadController = async (req, res) => {
             return res.status(500).json({ error: 'Failed to save PDF in database' });
         }
 
-        let { data: data1, error: error1 } = await supabase.storage.from('recordedPapers').createSignedUrl(`public/${outputFilename}`, 60, {
+        let { data: data1, error: error1 } = await supabase.storage.from('recordedPapers').createSignedUrl(`public/${outputFilename}_${studentId}`, 60, {
             download: true
         })
 
         if (error1) {
             console.log(error1);
             return res.status(500).json({ error: 'Failed to create signed URL' });
+        }
+
+        let { data: saveTableData, error: saveTableError } = await supabase.from('RECORDED_PAPER').insert({
+            paper_id: paperId,
+            student_id: studentId,
+            teacher_id: teacher_id,
+            filename: `${outputFilename}_${studentId}`
+        });
+
+        if (saveTableError) {
+            console.log(saveTableError);
+            return res.status(500).json({ error: 'Failed to save PDF in database' });
         }
 
         return res.status(200).json({

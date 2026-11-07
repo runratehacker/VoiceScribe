@@ -4,6 +4,7 @@ import generatePaper from '../controllers/generateController.js';
 import downloadController from '../controllers/downloadController.js';
 import formatLatexController from '../controllers/latexController.js';
 import { uploadPaper } from '../controllers/uploadController.js';
+import { getEvaluatedPaper } from '../controllers/evaluatedController.js';
 import multer from 'multer';
 
 const router = express.Router();
@@ -32,6 +33,7 @@ router.post('/format-latex', formatLatexController);
 router.post('/generate', generatePaper);
 router.post('/upload', upload.single('pdf'), uploadPaper);
 router.get('/students', getAllStudents);
+router.get('/evaluated/:studentid', getEvaluatedPaper);
 
 
 export default router;

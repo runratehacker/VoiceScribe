@@ -49,7 +49,7 @@ const uploadPaper = async (req, res) => {
             student_id: student_id,
             teacher_id: teacher_id,
             total_marks: total_marks,
-            filename: filename
+            filename: `${filename}_${student_id}_evaluated`
 
         })
 

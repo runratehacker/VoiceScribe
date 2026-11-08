@@ -147,6 +147,43 @@ const TeacherDashboard = () => {
     created_at: [],
   });
 
+  // ─────────────────────────────────────────────
+  // Recorded Papers Section State (/api/recorded/:teacherid)
+  // ─────────────────────────────────────────────
+  const [recordedPapersRaw, setRecordedPapersRaw] = useState({
+    signedUrl: [],
+    paperids: [],
+    studentids: [],
+    created_at: [],
+  });
+  const [loadingRecordedPapers, setLoadingRecordedPapers] = useState(false);
+  const [recordedFilterPaperId, setRecordedFilterPaperId] = useState('');
+  const [recordedFilterStudentId, setRecordedFilterStudentId] = useState('');
+
+  const fetchTeacherRecordedPapers = async () => {
+    const teacherId = user?.id || 1;
+    setLoadingRecordedPapers(true);
+    try {
+      const recRes = await axios.get(`${API_BASE_URL}/api/recorded/${teacherId}`);
+      if (recRes.data) {
+        setRecordedPapersRaw({
+          signedUrl: Array.isArray(recRes.data.signedUrl) ? recRes.data.signedUrl : [],
+          paperids: Array.isArray(recRes.data.paperids) ? recRes.data.paperids : [],
+          studentids: Array.isArray(recRes.data.studentids)
+            ? recRes.data.studentids
+            : Array.isArray(recRes.data.student_ids)
+              ? recRes.data.student_ids
+              : [],
+          created_at: Array.isArray(recRes.data.created_at) ? recRes.data.created_at : [],
+        });
+      }
+    } catch (err) {
+      console.error('Failed to fetch teacher recorded papers:', err);
+    } finally {
+      setLoadingRecordedPapers(false);
+    }
+  };
+
   const fetchTeacherEvaluatedPapers = async () => {
     const teacherId = user?.id || 1;
     try {
@@ -250,6 +287,27 @@ const TeacherDashboard = () => {
       } catch (err) {
         console.error('Failed to fetch teacher evaluated papers:', err);
       }
+
+      if (isMounted) setLoadingRecordedPapers(true);
+      try {
+        const recRes = await axios.get(`${API_BASE_URL}/api/recorded/${teacherId}`);
+        if (isMounted && recRes.data) {
+          setRecordedPapersRaw({
+            signedUrl: Array.isArray(recRes.data.signedUrl) ? recRes.data.signedUrl : [],
+            paperids: Array.isArray(recRes.data.paperids) ? recRes.data.paperids : [],
+            studentids: Array.isArray(recRes.data.studentids)
+              ? recRes.data.studentids
+              : Array.isArray(recRes.data.student_ids)
+                ? recRes.data.student_ids
+                : [],
+            created_at: Array.isArray(recRes.data.created_at) ? recRes.data.created_at : [],
+          });
+        }
+      } catch (err) {
+        console.error('Failed to fetch teacher recorded papers:', err);
+      } finally {
+        if (isMounted) setLoadingRecordedPapers(false);
+      }
     };
     fetchInitialData();
     return () => {
@@ -257,12 +315,17 @@ const TeacherDashboard = () => {
     };
   }, [user?.id]);
 
-  // Refresh available papers, students, and evaluated papers when switching to the Upload Paper tab
+  // Refresh available papers, students, and evaluated/recorded papers when switching tabs
   useEffect(() => {
     if (activeView === 'upload') {
       fetchAvailablePapers();
       fetchAvailableStudents();
       fetchTeacherEvaluatedPapers();
+      fetchTeacherRecordedPapers();
+    } else if (activeView === 'recorded') {
+      fetchAvailablePapers();
+      fetchAvailableStudents();
+      fetchTeacherRecordedPapers();
     }
   }, [activeView]);
 
@@ -656,6 +719,81 @@ const TeacherDashboard = () => {
     return dbRecords.length > 0 ? dbRecords : uploadedEvaluatedList;
   }, [evaluatedPapersRaw, availablePapers, availableStudents, uploadedEvaluatedList]);
 
+  // Recorded papers mapped from /api/recorded/:teacherid
+  const displayedRecordedPapers = useMemo(() => {
+    const {
+      signedUrl = [],
+      paperids = [],
+      studentids = [],
+      created_at = [],
+    } = recordedPapersRaw;
+
+    const count = Math.max(signedUrl.length, paperids.length, studentids.length, created_at.length);
+    const items = [];
+
+    for (let idx = 0; idx < count; idx++) {
+      const paperId = paperids[idx];
+      const studentId = studentids[idx];
+      const rawDate = created_at[idx];
+      const url = signedUrl[idx];
+      const matchedPaper = availablePapers.find((p) => String(p.id) === String(paperId));
+      const matchedStudent = availableStudents.find((s) => String(s.id) === String(studentId));
+
+      items.push({
+        id: `REC-DB-${paperId ?? idx}-${studentId ?? idx}-${idx}`,
+        paperId,
+        paperName: matchedPaper?.name || `Paper #${paperId ?? idx + 1}`,
+        subject: matchedPaper?.subject || null,
+        grade: matchedPaper?.grade || null,
+        studentId,
+        studentName: matchedStudent?.name || null,
+        createdAtDate: formatEvaluatedDate(rawDate),
+        rawDate,
+        fileUrl: url,
+      });
+    }
+
+    return items;
+  }, [recordedPapersRaw, availablePapers, availableStudents]);
+
+  const filteredRecordedPapers = useMemo(() => {
+    return displayedRecordedPapers.filter((item) => {
+      if (recordedFilterPaperId && String(item.paperId) !== String(recordedFilterPaperId)) {
+        return false;
+      }
+      if (recordedFilterStudentId && String(item.studentId) !== String(recordedFilterStudentId)) {
+        return false;
+      }
+      return true;
+    });
+  }, [displayedRecordedPapers, recordedFilterPaperId, recordedFilterStudentId]);
+
+  const recordedUniqueStudentsCount = useMemo(() => {
+    const ids = new Set(
+      displayedRecordedPapers
+        .map((item) => item.studentId)
+        .filter((id) => id !== undefined && id !== null)
+    );
+    return ids.size;
+  }, [displayedRecordedPapers]);
+
+  // Check whether the selected student has submitted a recorded paper for the selected paper
+  const selectedRecordedSubmission = useMemo(() => {
+    if (!uploadPaperId || !uploadStudentId) return null;
+    return (
+      displayedRecordedPapers.find(
+        (rec) =>
+          String(rec.paperId) === String(uploadPaperId) &&
+          String(rec.studentId) === String(uploadStudentId)
+      ) || null
+    );
+  }, [displayedRecordedPapers, uploadPaperId, uploadStudentId]);
+
+  const hasRecordedSubmission = Boolean(selectedRecordedSubmission);
+  const missingRecordedSubmission = Boolean(
+    uploadPaperId && uploadStudentId && !loadingRecordedPapers && !hasRecordedSubmission
+  );
+
   const processSelectedFile = (file) => {
     if (!file) return;
     setUploadStatus({ type: '', text: '' });
@@ -707,6 +845,13 @@ const TeacherDashboard = () => {
       setUploadStatus({ type: 'error', text: 'Please select a student.' });
       return;
     }
+    if (!hasRecordedSubmission) {
+      setUploadStatus({
+        type: 'error',
+        text: `${selectedUploadStudent.name} has not submitted a recorded paper for "${selectedUploadPaper.name}". You cannot upload an evaluated paper until the student submits their recorded paper.`,
+      });
+      return;
+    }
     if (uploadMarksObtained === '' || uploadMarksObtained === null) {
       setUploadStatus({ type: 'error', text: 'Please enter the total marks obtained by the student.' });
       return;
@@ -727,8 +872,8 @@ const TeacherDashboard = () => {
       const formData = new FormData();
       formData.append('pdf', uploadedFile);
       formData.append('total_marks', obtainedNum);
-      formData.append('student_id', 2);
-      formData.append('teacher_id', 1);
+      formData.append('student_id', Number(selectedUploadStudent.id));
+      formData.append('teacher_id', Number(user?.id || 1));
       formData.append('paper_id', Number(selectedUploadPaper.id));
 
       const response = await axios.post(`${API_BASE_URL}/api/upload`, formData, {
@@ -743,8 +888,8 @@ const TeacherDashboard = () => {
         paperName: selectedUploadPaper.name,
         subject: selectedUploadPaper.subject || 'General',
         grade: selectedUploadPaper.grade || 5,
-        studentId: 1,
-        studentName: selectedUploadStudent?.name || 'Student #1',
+        studentId: Number(selectedUploadStudent.id),
+        studentName: selectedUploadStudent?.name || `Student #${selectedUploadStudent.id}`,
         marksObtained: obtainedNum,
         maxMarks: maxNum,
         percentage: pct,
@@ -823,6 +968,7 @@ const TeacherDashboard = () => {
           >
             {[
               { id: 'compose', label: 'Compose Paper' },
+              { id: 'recorded', label: 'Recorded Papers' },
               { id: 'upload', label: 'Upload Paper' },
             ].map((tab) => (
               <button
@@ -911,9 +1057,13 @@ const TeacherDashboard = () => {
         <section className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 pb-2">
           <div className="max-w-2xl">
             <span className="inline-flex items-center px-3 py-1 rounded-full bg-[#f0efed] text-[12px] font-semibold tracking-[0.08em] uppercase text-[#0c0a09] mb-4">
-              {activeView === 'compose' ? 'Assessment Authoring' : 'Evaluated Scripts'}
+              {activeView === 'compose'
+                ? 'Assessment Authoring'
+                : activeView === 'recorded'
+                  ? 'Recorded Submissions'
+                  : 'Evaluated Scripts'}
             </span>
-            {activeView === 'compose' ? (
+            {activeView === 'compose' && (
               <>
                 <h1 className="font-serif font-light text-4xl sm:text-5xl text-[#0c0a09] tracking-[-0.03em] leading-[1.1] pb-1">
                   Compose an <span className="italic font-light">examination paper</span>.
@@ -922,7 +1072,18 @@ const TeacherDashboard = () => {
                   Define paper details, configure objective and subjective questions with marks, and generate a fillable PDF worksheet.
                 </p>
               </>
-            ) : (
+            )}
+            {activeView === 'recorded' && (
+              <>
+                <h1 className="font-serif font-light text-4xl sm:text-5xl text-[#0c0a09] tracking-[-0.03em] leading-[1.1] pb-1">
+                  Student <span className="italic font-light">recorded papers</span>.
+                </h1>
+                <p className="text-[16px] text-[#4e4e4e] leading-relaxed mt-2.5 max-w-[60ch]">
+                  Review voice-transcribed examination scripts submitted by students, complete with submission dates and downloadable PDFs.
+                </p>
+              </>
+            )}
+            {activeView === 'upload' && (
               <>
                 <h1 className="font-serif font-light text-4xl sm:text-5xl text-[#0c0a09] tracking-[-0.03em] leading-[1.1] pb-1">
                   Upload an <span className="italic font-light">evaluated paper</span>.
@@ -937,6 +1098,7 @@ const TeacherDashboard = () => {
           <div className="flex flex-wrap items-center gap-2 shrink-0 md:hidden">
             {[
               { id: 'compose', label: 'Compose Paper' },
+              { id: 'recorded', label: 'Recorded Papers' },
               { id: 'upload', label: 'Upload Paper' },
             ].map((tab) => (
               <button
@@ -1719,6 +1881,23 @@ const TeacherDashboard = () => {
                     </span>
                   </div>
                   <div className="flex items-center justify-between gap-2">
+                    <span className="text-[#777169]">Recorded Paper</span>
+                    <span
+                      className={`font-medium truncate ${!uploadPaperId || !uploadStudentId
+                        ? 'text-[#777169]'
+                        : hasRecordedSubmission
+                          ? 'text-[#16a34a]'
+                          : 'text-[#dc2626]'
+                        }`}
+                    >
+                      {!uploadPaperId || !uploadStudentId
+                        ? 'Select paper & student'
+                        : hasRecordedSubmission
+                          ? `Submitted (${selectedRecordedSubmission.createdAtDate})`
+                          : 'Not submitted'}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between gap-2">
                     <span className="text-[#777169]">Score Recorded</span>
                     <span className="font-medium text-[#0c0a09] tabular-nums">
                       {uploadMarksObtained !== '' ? uploadMarksObtained : '–'} / {selectedUploadPaper ? `${selectedUploadPaperMaxMarks} Marks` : '–'}
@@ -1800,12 +1979,32 @@ const TeacherDashboard = () => {
                       required
                     >
                       <option value="">Select Student</option>
-                      {availableStudents.map((stu) => (
-                        <option key={stu.id} value={stu.id}>
-                          {stu.name}
-                        </option>
-                      ))}
+                      {availableStudents.map((stu) => {
+                        const studentHasSubmittedForPaper = uploadPaperId
+                          ? displayedRecordedPapers.some(
+                            (rec) =>
+                              String(rec.paperId) === String(uploadPaperId) &&
+                              String(rec.studentId) === String(stu.id)
+                          )
+                          : null;
+                        return (
+                          <option key={stu.id} value={stu.id}>
+                            {stu.name}
+                            {uploadPaperId
+                              ? studentHasSubmittedForPaper
+                                ? ' — Recorded paper submitted'
+                                : ' — No recorded paper'
+                              : ''}
+                          </option>
+                        );
+                      })}
                     </select>
+                    {missingRecordedSubmission && (
+                      <p className="text-[13px] text-[#dc2626] mt-0.5">
+                        {selectedUploadStudent?.name || 'This student'} has not submitted a recorded paper for{' '}
+                        <span className="font-medium">{selectedUploadPaper?.name || 'this paper'}</span>. An evaluated paper cannot be uploaded until a recorded paper is submitted.
+                      </p>
+                    )}
                   </div>
 
                   {/* 3. Total Marks Obtained */}
@@ -1875,7 +2074,7 @@ const TeacherDashboard = () => {
                   </span>
                   <button
                     type="submit"
-                    disabled={uploadingPaper}
+                    disabled={uploadingPaper || missingRecordedSubmission}
                     className="h-11 px-6 rounded-full bg-[#292524] hover:bg-[#0c0a09] text-white text-[15px] font-medium transition-all disabled:opacity-50 disabled:pointer-events-none active:scale-[0.98]"
                   >
                     {uploadingPaper ? 'Uploading...' : 'Upload Evaluated Paper'}
@@ -1950,6 +2149,267 @@ const TeacherDashboard = () => {
                           >
                             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.75" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                            </svg>
+                            <span>Download PDF</span>
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </section>
+        )}
+
+        {/* ─────────────────────────────────────────────────────────────────────────── */}
+        {/* SECTION 3: RECORDED PAPERS (/api/recorded/:teacherid)                       */}
+        {/* ─────────────────────────────────────────────────────────────────────────── */}
+        {activeView === 'recorded' && (
+          <section
+            id="recorded-papers-section"
+            className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start"
+          >
+            {/* Left 4 Columns: Atmospheric Summary & Filters Card (gradient-orb-card) */}
+            <aside className="lg:col-span-4 lg:sticky lg:top-22 flex flex-col gap-6">
+              <div className="relative overflow-hidden bg-[#fafafa] rounded-3xl border border-[#e7e5e4] p-6 sm:p-8 shadow-[0_4px_16px_rgba(0,0,0,0.03)] flex flex-col gap-6">
+                <div
+                  className="absolute -top-20 -right-20 w-64 h-64 rounded-full opacity-40 blur-2xl pointer-events-none"
+                  style={{
+                    background: 'radial-gradient(circle at center, #c8b8e0 0%, #a8c8e8 50%, transparent 75%)',
+                  }}
+                  aria-hidden="true"
+                />
+
+                <div className="relative z-10 pb-4 border-b border-[#e7e5e4]">
+                  <h2 className="font-serif font-light text-2xl sm:text-[28px] text-[#0c0a09] tracking-[-0.02em] leading-[1.15]">
+                    Submission Overview
+                  </h2>
+                  <p className="text-[14px] text-[#4e4e4e] mt-1">
+                    Voice-recorded scripts linked to your account.
+                  </p>
+                </div>
+
+                {/* Key Metrics Grid */}
+                <div className="relative z-10 grid grid-cols-2 gap-3.5">
+                  <div className="bg-white rounded-xl border border-[#e7e5e4] p-4">
+                    <span className="text-[13px] font-medium text-[#777169]">
+                      Recorded Scripts
+                    </span>
+                    <p className="font-serif font-light text-3xl text-[#0c0a09] mt-1 tabular-nums">
+                      {displayedRecordedPapers.length}
+                    </p>
+                    <p className="text-[12.5px] text-[#4e4e4e] mt-1 tabular-nums">
+                      {filteredRecordedPapers.length} shown
+                    </p>
+                  </div>
+
+                  <div className="bg-white rounded-xl border border-[#e7e5e4] p-4">
+                    <span className="text-[13px] font-medium text-[#777169]">
+                      Students
+                    </span>
+                    <p className="font-serif font-light text-3xl text-[#0c0a09] mt-1 tabular-nums">
+                      {recordedUniqueStudentsCount}
+                    </p>
+                    <p className="text-[12.5px] text-[#4e4e4e] mt-1">
+                      Submitted papers
+                    </p>
+                  </div>
+                </div>
+
+                {/* Filter Controls */}
+                <div className="relative z-10 flex flex-col gap-4 bg-white rounded-xl border border-[#e7e5e4] p-4">
+                  <div className="flex flex-col gap-2">
+                    <label htmlFor="recorded-filter-student" className="text-[13.5px] font-medium text-[#292524]">
+                      Filter by Student
+                    </label>
+                    <select
+                      id="recorded-filter-student"
+                      value={recordedFilterStudentId}
+                      onChange={(e) => setRecordedFilterStudentId(e.target.value)}
+                      className="w-full h-11 px-3.5 rounded-lg bg-white border border-[#d6d3d1] text-[14.5px] text-[#0c0a09] outline-none focus:border-[#0c0a09] focus:ring-1 focus:ring-[#0c0a09] transition-all"
+                    >
+                      <option value="">All Students</option>
+                      {availableStudents.map((stu) => (
+                        <option key={stu.id} value={stu.id}>
+                          {stu.name} (ID: {stu.id})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <label htmlFor="recorded-filter-paper" className="text-[13.5px] font-medium text-[#292524]">
+                      Filter by Paper
+                    </label>
+                    <select
+                      id="recorded-filter-paper"
+                      value={recordedFilterPaperId}
+                      onChange={(e) => setRecordedFilterPaperId(e.target.value)}
+                      className="w-full h-11 px-3.5 rounded-lg bg-white border border-[#d6d3d1] text-[14.5px] text-[#0c0a09] outline-none focus:border-[#0c0a09] focus:ring-1 focus:ring-[#0c0a09] transition-all"
+                    >
+                      <option value="">All Papers</option>
+                      {availablePapers.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="relative z-10 flex flex-col gap-2.5">
+                  <button
+                    type="button"
+                    onClick={fetchTeacherRecordedPapers}
+                    disabled={loadingRecordedPapers}
+                    className="w-full h-10 px-5 rounded-full bg-[#292524] hover:bg-[#0c0a09] text-white text-[14px] font-medium transition-all flex items-center justify-center gap-2 disabled:opacity-50 active:scale-[0.98]"
+                  >
+                    <span>{loadingRecordedPapers ? 'Refreshing...' : 'Refresh Submissions'}</span>
+                  </button>
+
+                  {(recordedFilterPaperId || recordedFilterStudentId) && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setRecordedFilterPaperId('');
+                        setRecordedFilterStudentId('');
+                      }}
+                      className="w-full h-10 px-5 rounded-full bg-white border border-[#d6d3d1] hover:border-[#0c0a09] text-[#0c0a09] text-[13.5px] font-medium transition-all active:scale-[0.98]"
+                    >
+                      Clear Filters
+                    </button>
+                  )}
+                </div>
+              </div>
+            </aside>
+
+            {/* Right 8 Columns: Recorded Papers Feed Card */}
+            <div className="lg:col-span-8 bg-white rounded-2xl border border-[#e7e5e4] p-6 sm:p-8 shadow-[0_4px_16px_rgba(0,0,0,0.02)] flex flex-col gap-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-[#f0efed]">
+                <div>
+                  <h2 className="font-serif font-light text-2xl sm:text-[28px] text-[#0c0a09] tracking-[-0.02em] leading-[1.2]">
+                    Recorded Papers ({filteredRecordedPapers.length})
+                  </h2>
+                  <p className="text-[14px] text-[#777169] mt-1">
+                    Showing student identity, assessment title, and date recorded.
+                  </p>
+                </div>
+              </div>
+
+              {/* Loading Skeleton State */}
+              {loadingRecordedPapers && displayedRecordedPapers.length === 0 ? (
+                <div className="divide-y divide-[#f0efed] animate-pulse">
+                  {[0, 1, 2].map((item) => (
+                    <div key={item} className="py-5 flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-full bg-[#f0efed]" />
+                        <div className="space-y-2">
+                          <div className="h-4 w-48 bg-[#f0efed] rounded-md" />
+                          <div className="h-3.5 w-64 bg-[#f0efed] rounded-md" />
+                        </div>
+                      </div>
+                      <div className="h-9 w-32 bg-[#f0efed] rounded-full" />
+                    </div>
+                  ))}
+                </div>
+              ) : filteredRecordedPapers.length === 0 ? (
+                /* Empty State */
+                <div className="py-12 px-4 text-center flex flex-col items-center justify-center gap-3">
+                  <div className="w-12 h-12 rounded-full bg-[#f0efed] text-[#292524] flex items-center justify-center">
+                    <div className="flex items-center gap-1" aria-hidden="true">
+                      <span className="w-0.5 h-3 bg-[#292524] rounded-full" />
+                      <span className="w-0.5 h-4.5 bg-[#292524] rounded-full" />
+                      <span className="w-0.5 h-2.5 bg-[#292524] rounded-full" />
+                    </div>
+                  </div>
+                  <h3 className="font-serif font-light text-2xl text-[#0c0a09] tracking-[-0.02em]">
+                    No recorded papers found
+                  </h3>
+                  <p className="text-[14px] text-[#777169] max-w-md leading-relaxed">
+                    {recordedFilterPaperId || recordedFilterStudentId
+                      ? 'No student submissions match your active filters. Try clearing the filters to view all recorded papers.'
+                      : 'When students complete and download their voice-transcribed examination papers, their recorded scripts will appear here.'}
+                  </p>
+                </div>
+              ) : (
+                /* Recorded Papers Rows (voice-row pattern from elevenlabs-DESIGN.md) */
+                <div className="divide-y divide-[#f0efed]">
+                  {filteredRecordedPapers.map((item) => (
+                    <div
+                      key={item.id}
+                      className="py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-colors"
+                    >
+                      <div className="flex items-start sm:items-center gap-4 min-w-0">
+                        {/* Circular voice icon (voice-icon-circular) */}
+                        <div
+                          className="w-10 h-10 rounded-full bg-[#f0efed] text-[#0c0a09] flex items-center justify-center shrink-0 mt-0.5 sm:mt-0"
+                          aria-hidden="true"
+                        >
+                          <div className="flex items-center gap-0.5">
+                            <span className="w-[1.5px] h-3 bg-[#292524] rounded-full" />
+                            <span className="w-[1.5px] h-4 bg-[#292524] rounded-full" />
+                            <span className="w-[1.5px] h-2.5 bg-[#292524] rounded-full" />
+                          </div>
+                        </div>
+
+                        <div className="flex flex-col gap-1 min-w-0">
+                          {/* Paper Title & Subject */}
+                          <div className="flex items-center gap-2.5 flex-wrap">
+                            <span className="text-[16px] font-medium text-[#0c0a09] truncate">
+                              {item.paperName}
+                            </span>
+                            {item.subject && (
+                              <span className="text-[13px] text-[#777169]">· {item.subject}</span>
+                            )}
+                            {item.grade && (
+                              <span className="text-[12px] font-medium px-2.5 py-0.5 rounded-full bg-[#f0efed] text-[#292524] tabular-nums">
+                                Grade {item.grade}
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Student Identity & Recorded Date */}
+                          <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[13.5px] text-[#4e4e4e]">
+                            <span>
+                              Student:{' '}
+                              <strong className="font-medium text-[#0c0a09]">
+                                {item.studentName ? `${item.studentName} ` : ''}
+                              </strong>
+                              <span className="text-[#777169] tabular-nums">
+                                (ID: {item.studentId ?? '—'})
+                              </span>
+                            </span>
+                            <span className="text-[#d6d3d1]" aria-hidden="true">·</span>
+                            <span className="text-[#777169] tabular-nums">
+                              Recorded on <span className="text-[#292524] font-medium">{item.createdAtDate}</span>
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Right: Date Badge & Download Action */}
+                      <div className="flex items-center gap-3 shrink-0 sm:pl-4">
+                        <span className="hidden xl:inline-flex items-center px-3 py-1 rounded-full bg-[#fafafa] border border-[#e7e5e4] text-[12.5px] text-[#4e4e4e] tabular-nums">
+                          {item.createdAtDate}
+                        </span>
+
+                        {item.fileUrl && (
+                          <a
+                            href={item.fileUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            download
+                            className="h-9 px-4 rounded-full bg-white border border-[#d6d3d1] hover:border-[#0c0a09] hover:bg-[#292524] text-[#0c0a09] hover:text-white text-[13px] font-medium inline-flex items-center gap-1.5 transition-all active:scale-[0.98]"
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth="1.75"
+                                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                              />
                             </svg>
                             <span>Download PDF</span>
                           </a>

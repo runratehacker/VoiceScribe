@@ -58,7 +58,7 @@ const getRecordedPapers = async (req, res) => {
 
         const teacher_id = parseInt(teacherid);
 
-        const { error, data } = await supabase.from("RECORDED_PAPER").select("filename,student_id,paper_id").eq("teacher_id", teacher_id);
+        const { error, data } = await supabase.from("RECORDED_PAPER").select("filename,student_id,paper_id,created_at").eq("teacher_id", teacher_id);
 
         if (error) {
             console.log(error);
@@ -77,12 +77,15 @@ const getRecordedPapers = async (req, res) => {
         const paperids = data.map(item => item.paper_id);
         const studentids = data.map(item => item.student_id);
 
+        const created_at = data.map(item => item.created_at);
+
         const urls = paperData.map(item => item.signedUrl);
 
         return res.status(200).json({
             message: 'Recorded Paper fetched successfully',
             paperids,
             studentids,
+            created_at,
             signedUrl: urls
         });
 

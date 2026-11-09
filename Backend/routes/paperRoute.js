@@ -6,6 +6,8 @@ import formatLatexController from '../controllers/latexController.js';
 import { uploadPaper } from '../controllers/uploadController.js';
 import { getEvaluatedPaperStudent, getEvaluatedPaperTeacher } from '../controllers/evaluatedController.js';
 import multer from 'multer';
+import { authenticate } from '../middleware/auth.js';
+import { checkRole } from '../middleware/checkRole.js';
 
 const router = express.Router();
 
@@ -26,16 +28,19 @@ const upload = multer({
     }
 })
 
-router.get('/papers', getAllPapers);
-router.get('/questions/:paperid', getQuestions);
-router.post('/download/:paperid', downloadController);
-router.post('/format-latex', formatLatexController);
-router.post('/generate', generatePaper);
-router.post('/upload', upload.single('pdf'), uploadPaper);
-router.get('/students', getAllStudents);
-router.get('/recorded/:teacherid', getRecordedPapers);
-router.get('/evaluated/student/:studentid', getEvaluatedPaperStudent);
-router.get('/evaluated/teacher/:teacherid', getEvaluatedPaperTeacher);
+router.get('/papers', authenticate, checkRole(['teacher', 'student']), getAllPapers);
+router.get('/questions/:paperid', authenticate, checkRole(['teacher', 'student']), getQuestions);
+
+router.post('/format-latex', authenticate, checkRole(['teacher']), formatLatexController);
+router.post('/generate', authenticate, checkRole(['teacher']), generatePaper);
+router.post('/upload', authenticate, checkRole(['teacher']), upload.single('pdf'), uploadPaper);
+router.get('/students', authenticate, checkRole(['teacher']), getAllStudents);
+router.get('/recorded', authenticate, checkRole(['teacher']), getRecordedPapers);
+router.get('/evaluated/teacher', authenticate, checkRole(['teacher']), getEvaluatedPaperTeacher);
+
+router.get('/evaluated/student', authenticate, checkRole(['student']), getEvaluatedPaperStudent);
+router.post('/download/:paperid', authenticate, checkRole(['student']), downloadController);
+
 
 
 

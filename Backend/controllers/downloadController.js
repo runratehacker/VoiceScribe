@@ -6,8 +6,8 @@ const downloadController = async (req, res) => {
 
     try {
 
-        const studentId = parseInt(req.body.studentid);
-        const paperId = parseInt(req.params.paperid);
+        const studentId = Number(req.user.id);
+        const paperId = Number(req.params.paperid);
 
         const { formFields } = req.body;
         let fields = {};

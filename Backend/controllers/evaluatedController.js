@@ -5,9 +5,7 @@ const getEvaluatedPaperStudent = async (req, res) => {
 
     try {
 
-        const { studentid } = req.params;
-
-        const student_id = Number(studentid);
+        const student_id = Number(req.user.id);
 
         const { data: studentData, error: studentError } = await supabase.from('EVALUATED_PAPER').select('filename,paper_id,total_marks,created_at').eq('student_id', student_id);
 
@@ -65,9 +63,7 @@ const getEvaluatedPaperTeacher = async (req, res) => {
 
     try {
 
-        const { teacherid } = req.params;
-
-        const teacher_id = Number(teacherid);
+        const teacher_id = Number(req.user.id);
 
         const { data: teacherData, error: teacherError } = await supabase.from('EVALUATED_PAPER').select('filename,paper_id,total_marks,student_id,created_at').eq('teacher_id', teacher_id);
 

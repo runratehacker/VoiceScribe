@@ -161,10 +161,9 @@ const TeacherDashboard = () => {
   const [recordedFilterStudentId, setRecordedFilterStudentId] = useState('');
 
   const fetchTeacherRecordedPapers = async () => {
-    const teacherId = user?.id || 1;
     setLoadingRecordedPapers(true);
     try {
-      const recRes = await axios.get(`${API_BASE_URL}/api/recorded/${teacherId}`);
+      const recRes = await axios.get(`${API_BASE_URL}/api/recorded`);
       if (recRes.data) {
         setRecordedPapersRaw({
           signedUrl: Array.isArray(recRes.data.signedUrl) ? recRes.data.signedUrl : [],
@@ -185,9 +184,8 @@ const TeacherDashboard = () => {
   };
 
   const fetchTeacherEvaluatedPapers = async () => {
-    const teacherId = user?.id || 1;
     try {
-      const evalRes = await axios.get(`${API_BASE_URL}/api/evaluated/teacher/${teacherId}`);
+      const evalRes = await axios.get(`${API_BASE_URL}/api/evaluated/teacher`);
       if (evalRes.data) {
         setEvaluatedPapersRaw({
           signedUrl: Array.isArray(evalRes.data.signedUrl) ? evalRes.data.signedUrl : [],
@@ -272,9 +270,8 @@ const TeacherDashboard = () => {
         console.error('Failed to fetch students:', err);
       }
 
-      const teacherId = user?.id || 1;
       try {
-        const evalRes = await axios.get(`${API_BASE_URL}/api/evaluated/teacher/${teacherId}`);
+        const evalRes = await axios.get(`${API_BASE_URL}/api/evaluated/teacher`);
         if (isMounted && evalRes.data) {
           setEvaluatedPapersRaw({
             signedUrl: Array.isArray(evalRes.data.signedUrl) ? evalRes.data.signedUrl : [],
@@ -290,7 +287,7 @@ const TeacherDashboard = () => {
 
       if (isMounted) setLoadingRecordedPapers(true);
       try {
-        const recRes = await axios.get(`${API_BASE_URL}/api/recorded/${teacherId}`);
+        const recRes = await axios.get(`${API_BASE_URL}/api/recorded`);
         if (isMounted && recRes.data) {
           setRecordedPapersRaw({
             signedUrl: Array.isArray(recRes.data.signedUrl) ? recRes.data.signedUrl : [],

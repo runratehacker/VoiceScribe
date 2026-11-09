@@ -5,7 +5,7 @@ const uploadPaper = async (req, res) => {
 
     try {
 
-        const { total_marks, student_id, teacher_id, paper_id } = req.body;
+        const { total_marks, student_id, paper_id } = req.body;
 
         if (!req.file) {
             return res.status(400).json({
@@ -47,7 +47,7 @@ const uploadPaper = async (req, res) => {
 
             paper_id: paperid,
             student_id: student_id,
-            teacher_id: teacher_id,
+            teacher_id: Number(req.user.id),
             total_marks: total_marks,
             filename: `${filename}_${student_id}_evaluated`
 

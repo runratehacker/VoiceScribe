@@ -54,9 +54,7 @@ const getRecordedPapers = async (req, res) => {
 
     try {
 
-        const { teacherid } = req.params;
-
-        const teacher_id = parseInt(teacherid);
+        const teacher_id = Number(req.user.id);
 
         const { error, data } = await supabase.from("RECORDED_PAPER").select("filename,student_id,paper_id,created_at").eq("teacher_id", teacher_id);
 

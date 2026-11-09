@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { API_BASE_URL } from '../config';
 import { normalizeQuestionsData } from '../hooks/useFormFields';
@@ -61,11 +62,8 @@ const StudentDashboard = () => {
   useEffect(() => {
     const fetchForms = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/api/papers`);
-        if (!response.ok) {
-          throw new Error('Failed to fetch question papers');
-        }
-        const data = await response.json();
+        const response = await axios.get(`${API_BASE_URL}/api/papers`);
+        const data = response.data;
         const papersList = Array.isArray(data) ? data : [];
         setForms(papersList);
 
@@ -101,8 +99,8 @@ const StudentDashboard = () => {
 
           let fields = null;
           try {
-            const fieldsRes = await fetch(`${API_BASE_URL}/api/questions/${currentForm.id}`);
-            const rawFields = await fieldsRes.json();
+            const fieldsRes = await axios.get(`${API_BASE_URL}/api/questions/${currentForm.id}`);
+            const rawFields = fieldsRes.data;
             fields = normalizeQuestionsData(rawFields, currentForm.id);
 
             const savedData = localStorage.getItem(`formFields_${currentForm.id}`);
@@ -157,18 +155,15 @@ const StudentDashboard = () => {
             });
           }
         }
-        const studentId = user?.id || 2;
         try {
-          const evalRes = await fetch(`${API_BASE_URL}/api/evaluated/student/${studentId}`);
-          if (evalRes.ok) {
-            const evalData = await evalRes.json();
-            setEvaluatedPapersRaw({
-              signedUrl: Array.isArray(evalData.signedUrl) ? evalData.signedUrl : [],
-              paperids: Array.isArray(evalData.paperids) ? evalData.paperids : [],
-              total_marks: Array.isArray(evalData.total_marks) ? evalData.total_marks : [],
-              created_at: Array.isArray(evalData.created_at) ? evalData.created_at : [],
-            });
-          }
+          const evalRes = await axios.get(`${API_BASE_URL}/api/evaluated/student`);
+          const evalData = evalRes.data;
+          setEvaluatedPapersRaw({
+            signedUrl: Array.isArray(evalData.signedUrl) ? evalData.signedUrl : [],
+            paperids: Array.isArray(evalData.paperids) ? evalData.paperids : [],
+            total_marks: Array.isArray(evalData.total_marks) ? evalData.total_marks : [],
+            created_at: Array.isArray(evalData.created_at) ? evalData.created_at : [],
+          });
         } catch (evalErr) {
           console.error('Error fetching evaluated papers:', evalErr);
         }

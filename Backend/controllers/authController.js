@@ -31,7 +31,7 @@ const login = async (req, res) => {
     // Generate JWT token
     const token = jwt.sign(
       { id: data.id, username: data.Username, role },
-      process.env.JWT_SECRET || 'fallback_secret_key_123',
+      process.env.JWT_SECRET,
       { expiresIn: '1d' }
     );
 

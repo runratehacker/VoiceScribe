@@ -36,7 +36,7 @@ axios.interceptors.response.use(
       localStorage.removeItem('token');
       localStorage.removeItem('user');
 
-      if (window.location.pathname !== '/') {
+      if (window.location.pathname !== '/' && window.location.pathname !== '/forgot-password') {
         window.location.href = '/';
       }
 

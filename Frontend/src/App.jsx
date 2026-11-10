@@ -1,6 +1,7 @@
 import React from 'react'
 import VoiceAssistantUI from './Frontpage'
 import Login from './components/Login'
+import ForgotPassword from './components/ForgotPassword'
 import StudentDashboard from './components/StudentDashboard'
 import TeacherDashboard from './components/TeacherDashboard'
 import { Route, Routes, Navigate } from 'react-router-dom'
@@ -19,6 +20,7 @@ const App = () => {
     <div>
       <Routes>
         <Route path='/' element={<Login />} />
+        <Route path='/forgot-password' element={<ForgotPassword />} />
         <Route 
           path='/fillform' 
           element={

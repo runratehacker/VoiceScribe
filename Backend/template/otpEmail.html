@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>VoiceScribe Password Reset Verification</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" />
+  <style>
+    body, table, td, p, a {
+      -webkit-text-size-adjust: 100%;
+      -ms-text-size-adjust: 100%;
+    }
+    body {
+      margin: 0;
+      padding: 0;
+      width: 100% !important;
+      background-color: #f5f5f5;
+      color: #292524;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    .display-heading {
+      font-family: 'Waldenburg', 'EB Garamond', Georgia, 'Times New Roman', serif;
+      font-weight: 300;
+      font-size: 34px;
+      line-height: 1.14;
+      letter-spacing: -0.36px;
+      color: #0c0a09;
+      margin: 0 0 12px 0;
+    }
+    .otp-digits {
+      font-family: 'JetBrains Mono', 'SF Mono', Consolas, 'Courier New', monospace;
+      font-size: 36px;
+      font-weight: 500;
+      letter-spacing: 10px;
+      color: #0c0a09;
+      margin: 0;
+      padding-left: 10px;
+    }
+    @media only screen and (max-width: 600px) {
+      .email-shell {
+        padding: 24px 16px !important;
+      }
+      .card-body {
+        padding: 32px 24px !important;
+      }
+      .display-heading {
+        font-size: 28px !important;
+      }
+      .otp-digits {
+        font-size: 28px !important;
+        letter-spacing: 6px !important;
+        padding-left: 6px !important;
+      }
+    }
+  </style>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f5f5f5; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #292524;">
+
+  <!-- Preheader text (hidden in email body, visible in inbox preview) -->
+  <div style="display: none; max-height: 0; overflow: hidden; opacity: 0; font-size: 1px; line-height: 1px; color: #f5f5f5;">
+    Your VoiceScribe verification code is {{OTP}}. Valid for 10 minutes.
+  </div>
+
+  <!-- Full-bleed Off-White Canvas (#f5f5f5) -->
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: #f5f5f5; width: 100%;">
+    <tr>
+      <td align="center" class="email-shell" style="padding: 56px 20px;">
+
+        <!-- Main Container (Max 520px) -->
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width: 520px; width: 100%;">
+
+          <!-- Top Brand Bar -->
+          <tr>
+            <td style="padding: 0 4px 24px 4px;">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                <tr>
+                  <td align="left" valign="middle">
+                    <!-- VoiceScribe Acoustic Bars + Wordmark -->
+                    <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+                      <tr>
+                        <td valign="middle" style="padding-right: 10px;">
+                          <span style="display: inline-block; width: 2px; height: 11px; background-color: #292524; border-radius: 9999px; vertical-align: middle; margin-right: 3px;"></span>
+                          <span style="display: inline-block; width: 2px; height: 16px; background-color: #292524; border-radius: 9999px; vertical-align: middle; margin-right: 3px;"></span>
+                          <span style="display: inline-block; width: 2px; height: 9px; background-color: #292524; border-radius: 9999px; vertical-align: middle;"></span>
+                        </td>
+                        <td valign="middle" style="font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600; letter-spacing: 0.2em; color: #0c0a09; text-transform: uppercase;">
+                          VOICESCRIBE
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                  <td align="right" valign="middle" style="font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 400; color: #777169; letter-spacing: 0.15px;">
+                    Voice Intelligence System
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Editorial Surface Card (#ffffff) -->
+          <tr>
+            <td>
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: #ffffff; border: 1px solid #e7e5e4; border-radius: 24px; overflow: hidden; box-shadow: 0 4px 24px rgba(0, 0, 0, 0.03);">
+
+                <!-- Atmospheric Pastel Gradient Band (Mint / Peach / Lavender / Sky) -->
+                <tr>
+                  <td style="height: 8px; background: linear-gradient(90deg, #a7e5d3 0%, #f4c5a8 35%, #c8b8e0 70%, #a8c8e8 100%); font-size: 0; line-height: 0;">
+                    &nbsp;
+                  </td>
+                </tr>
+
+                <!-- Card Content -->
+                <tr>
+                  <td class="card-body" style="padding: 44px 40px 40px 40px; background-image: radial-gradient(circle at 92% 8%, rgba(200, 184, 224, 0.22) 0%, rgba(168, 200, 232, 0.12) 35%, transparent 65%), radial-gradient(circle at 8% 92%, rgba(244, 197, 168, 0.18) 0%, rgba(167, 229, 211, 0.12) 40%, transparent 65%);">
+
+                    <!-- Single Allowed Eyebrow Pill -->
+                    <div style="margin-bottom: 18px;">
+                      <span style="display: inline-block; background-color: #f0efed; color: #292524; font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.96px; text-transform: uppercase; padding: 5px 12px; border-radius: 9999px;">
+                        Password Reset
+                      </span>
+                    </div>
+
+                    <!-- Display Headline (Waldenburg Light / weight 300) -->
+                    <h1 class="display-heading" style="font-family: 'Waldenburg', 'EB Garamond', Georgia, 'Times New Roman', serif; font-weight: 300; font-size: 34px; line-height: 1.14; letter-spacing: -0.36px; color: #0c0a09; margin: 0 0 14px 0;">
+                      Verify your identity.
+                    </h1>
+
+                    <!-- Editorial Body Copy -->
+                    <p style="font-family: 'Inter', sans-serif; font-size: 15px; font-weight: 400; line-height: 1.55; letter-spacing: 0.15px; color: #4e4e4e; margin: 0 0 28px 0;">
+                      We received a request to reset the password for your VoiceScribe account. Enter the six-digit verification code below to set a new password.
+                    </p>
+
+                    <!-- OTP Code Plate -->
+                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-bottom: 28px;">
+                      <tr>
+                        <td align="center" style="background-color: #fafafa; border: 1px solid #d6d3d1; border-radius: 16px; padding: 28px 20px;">
+                          <div style="font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 500; color: #777169; letter-spacing: 0.2px; margin-bottom: 10px;">
+                            One-Time Verification Code
+                          </div>
+                          <div class="otp-digits" style="font-family: 'JetBrains Mono', 'SF Mono', Consolas, 'Courier New', monospace; font-size: 36px; font-weight: 500; letter-spacing: 10px; color: #0c0a09; padding-left: 10px; line-height: 1.2;">
+                            {{OTP}}
+                          </div>
+                        </td>
+                      </tr>
+                    </table>
+
+                    <!-- Validity Metadata Row -->
+                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="border-top: 1px solid #e7e5e4; padding-top: 20px;">
+                      <tr>
+                        <td valign="top" style="padding-top: 20px;">
+                          <p style="font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 400; line-height: 1.5; color: #4e4e4e; margin: 0 0 8px 0;">
+                            <strong style="font-weight: 500; color: #292524;">Expires in 10 minutes.</strong> For your security, this code can only be used once and should never be shared with anyone.
+                          </p>
+                          <p style="font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 400; line-height: 1.5; color: #777169; margin: 0;">
+                            If you did not request a password reset, you can safely ignore this message. Your account password will remain unchanged.
+                          </p>
+                        </td>
+                      </tr>
+                    </table>
+
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Editorial Footer -->
+          <tr>
+            <td align="center" style="padding: 28px 16px 0 16px;">
+              <p style="font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 400; line-height: 1.5; color: #777169; margin: 0 0 4px 0;">
+                VoiceScribe Accessible Examination Platform
+              </p>
+              <p style="font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 400; line-height: 1.5; color: #a8a29e; margin: 0;">
+                Automated security notification. Please do not reply to this email.
+              </p>
+            </td>
+          </tr>
+
+        </table>
+
+      </td>
+    </tr>
+  </table>
+
+</body>
+</html>
+

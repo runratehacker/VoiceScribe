@@ -1,5 +1,5 @@
 import React from 'react';
-import { LiveWaveform } from '../LiveWaveform';
+import { LiveWaveform } from '../Livewaveform';
 
 const VoiceFooter = ({
   isRecording,

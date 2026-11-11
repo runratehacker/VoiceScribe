@@ -26,10 +26,10 @@ const login = async (req, res) => {
 
     // Find user
     let role = "student";
-    let { error, data } = await supabase.from("STUDENT").select("id, Username, Password").eq("Username", username).single();
+    let { error, data } = await supabase.from("STUDENT").select("id, username, password").eq("username", username).single();
 
     if (error) {
-      ({ error, data } = await supabase.from("TEACHER").select("id, Username, Password").eq("Username", username).single());
+      ({ error, data } = await supabase.from("TEACHER").select("id, username, password").eq("username", username).single());
       role = "teacher";
     }
 
@@ -38,13 +38,13 @@ const login = async (req, res) => {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    if (password !== data.Password) {
+    if (password !== data.password) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
     // Generate JWT token
     const token = jwt.sign(
-      { id: data.id, username: data.Username, role },
+      { id: data.id, username: data.username, role },
       process.env.JWT_SECRET,
       { expiresIn: '1d' }
     );
@@ -54,7 +54,7 @@ const login = async (req, res) => {
       token,
       user: {
         id: data.id,
-        username: data.Username,
+        username: data.username,
         role
       }
     });
@@ -71,10 +71,10 @@ const sendOTP = async (req, res) => {
 
     const { username } = req.body;
 
-    let { error, data } = await supabase.from("STUDENT").select("email").eq("Username", username).single();
+    let { error, data } = await supabase.from("STUDENT").select("email").eq("username", username).single();
 
     if (error) {
-      ({ error, data } = await supabase.from("TEACHER").select("email").eq("Username", username).single());
+      ({ error, data } = await supabase.from("TEACHER").select("email").eq("username", username).single());
     }
 
     if (error || !data) {
@@ -215,10 +215,10 @@ const resetPassword = async (req, res) => {
     }
 
     let role = "student";
-    let { error, data } = await supabase.from("STUDENT").select("id, Username, Password").eq("Username", username).single();
+    let { error, data } = await supabase.from("STUDENT").select("id, username, password").eq("username", username).single();
 
     if (error) {
-      ({ error, data } = await supabase.from("TEACHER").select("id, Username, Password").eq("Username", username).single());
+      ({ error, data } = await supabase.from("TEACHER").select("id, username, password").eq("username", username).single());
       role = "teacher";
     }
 
@@ -240,13 +240,13 @@ const resetPassword = async (req, res) => {
       return res.status(500).json({ message: 'Invalid token' });
     }
 
-    const passworddatabase = data.Password;
+    const passworddatabase = data.password;
 
     if (password === passworddatabase) {
       return res.status(400).json({ message: 'new password and old password cannot be same' })
     }
 
-    const { data: updateData, error: updateError } = await supabase.from(role.toUpperCase()).update({ Password: password }).eq("Username", username);
+    const { data: updateData, error: updateError } = await supabase.from(role.toUpperCase()).update({ password: password }).eq("username", username);
 
     if (updateError) {
       console.log(updateError);

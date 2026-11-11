@@ -229,7 +229,7 @@ const TeacherDashboard = () => {
       if (Array.isArray(stuRes.data)) {
         const normalizedStudents = stuRes.data.map((s) => ({
           id: String(s.id),
-          name: s.name || s.Username || s.username || `Student #${s.id}`,
+          name: s.name || s.username || `Student #${s.id}`,
         }));
         setAvailableStudents(normalizedStudents);
       } else {
@@ -262,7 +262,7 @@ const TeacherDashboard = () => {
         if (isMounted && Array.isArray(stuRes.data)) {
           const normalizedStudents = stuRes.data.map((s) => ({
             id: String(s.id),
-            name: s.name || s.Username || s.username || `Student #${s.id}`,
+            name: s.name || s.username || `Student #${s.id}`,
           }));
           setAvailableStudents(normalizedStudents);
         }

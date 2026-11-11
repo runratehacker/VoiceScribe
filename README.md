@@ -57,6 +57,12 @@ When the Agent asks [ What is your name ? ] . User replies [ My name is xyz ] . 
 
 ---
 
+##  Database Design
+
+![Database Design](./assets/databaseDesign.png)
+
+---
+
 ## Setup
 
 ### 1. Environment Variables

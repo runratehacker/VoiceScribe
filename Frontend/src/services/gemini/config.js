@@ -1,4 +1,4 @@
-import { API_BASE_URL } from '../config';
+import { API_BASE_URL } from '../../config';
 
 // Settings and constants for the Gemini Live connection
 

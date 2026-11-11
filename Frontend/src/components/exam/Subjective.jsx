@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react';
-import LatexRenderer from './LatexRenderer';
+import LatexRenderer from '../LatexRenderer';
 
 const Subjective = ({
   fieldKey,

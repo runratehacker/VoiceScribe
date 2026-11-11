@@ -3,7 +3,7 @@
 "use client"
 
 import { useEffect, useRef } from "react"
-import { cn } from '../utils/waveformUtils'
+import { cn } from '../utils/cn'
 
 export const LiveWaveform = ({
   active = false,

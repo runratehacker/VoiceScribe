@@ -1,18 +1,18 @@
 import React, { useState, useEffect, useRef } from 'react';
-import Header from './components/Header';
-import VoiceFooter from './components/VoiceFooter';
-import Objective from './components/Objective';
-import Subjective from './components/Subjective';
-import ExamCompletedScreen from './components/ExamCompletedScreen';
-import { useAudioPlayback } from './hooks/useAudioPlayback';
-import { useGeminiLive } from './hooks/useGeminiLive';
-import { useAudioRecorder } from './hooks/useAudioRecorder';
-import { useFormFields } from './hooks/useFormFields';
-import { useQuestionNavigation } from './hooks/useQuestionNavigation';
+import Header from '../components/exam/Header';
+import VoiceFooter from '../components/exam/VoiceFooter';
+import Objective from '../components/exam/Objective';
+import Subjective from '../components/exam/Subjective';
+import ExamCompletedScreen from '../components/exam/ExamCompletedScreen';
+import { useAudioPlayback } from '../hooks/useAudioPlayback';
+import { useGeminiLive } from '../hooks/useGeminiLive';
+import { useAudioRecorder } from '../hooks/useAudioRecorder';
+import { useFormFields } from '../hooks/useFormFields';
+import { useQuestionNavigation } from '../hooks/useQuestionNavigation';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
-import { API_BASE_URL } from './config';
-import { useAuth } from './context/AuthContext';
+import { API_BASE_URL } from '../config';
+import { useAuth } from '../context/AuthContext';
 
 
 const VoiceAssistantUI = () => {

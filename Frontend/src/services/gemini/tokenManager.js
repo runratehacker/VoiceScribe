@@ -3,7 +3,7 @@
 
 import { useRef, useCallback } from 'react';
 import axios from 'axios';
-import { getTokenApiUrl, TOKEN_REFRESH_BUFFER_MS, GEMINI_MODEL } from './geminiConfig';
+import { getTokenApiUrl, TOKEN_REFRESH_BUFFER_MS, GEMINI_MODEL } from './config';
 
 export const useGeminiToken = () => {
   const tokenRef = useRef(null);                  // The actual token string

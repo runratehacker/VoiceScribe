@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { API_BASE_URL } from '../config';
-import LatexRenderer from './LatexRenderer';
+import LatexRenderer from '../components/LatexRenderer';
 
 const DEFAULT_OPTIONS = () => [
   { label: 'A', text: '' },

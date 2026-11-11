@@ -3,12 +3,12 @@
 // We split the logic into smaller files (like geminiConfig, geminiTools, etc.) to keep this clean.
 
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { geminiTools } from './geminiTools';
-import { getSetupPrompt, getCompletionPrompt, getSessionStartPrompt } from './geminiPrompts';
-import { processToolCalls } from './geminiToolHandlers';
-import { buildWsUrl, buildSetupMessage, MAX_RECONNECT_RETRIES, BASE_RECONNECT_DELAY_MS, SESSION_RESET_EVERY_N_QUESTIONS } from './geminiConfig';
-import { useGeminiToken } from './geminiTokenManager';
-import { parseWsMessage, categorizeMessage, MSG_TYPES } from './geminiMessageParser';
+import { geminiTools } from '../services/gemini/tools';
+import { getSetupPrompt, getCompletionPrompt, getSessionStartPrompt } from '../services/gemini/prompts';
+import { processToolCalls } from '../services/gemini/toolHandlers';
+import { buildWsUrl, buildSetupMessage, MAX_RECONNECT_RETRIES, BASE_RECONNECT_DELAY_MS, SESSION_RESET_EVERY_N_QUESTIONS } from '../services/gemini/config';
+import { useGeminiToken } from '../services/gemini/tokenManager';
+import { parseWsMessage, categorizeMessage, MSG_TYPES } from '../services/gemini/messageParser';
 
 export const useGeminiLive = ({ onFieldFilled, onFieldReset, onAudioReceived, formFields, currentKey, onNextQuestion, onPrevQuestion, onGoToQuestion }) => {
   const [wsState, setWsState] = useState("idle"); // "idle" | "connecting" | "connected" | "ready" | "reconnecting" | "error"

@@ -1,5 +1,5 @@
 import React from 'react';
-import LatexRenderer from './LatexRenderer';
+import LatexRenderer from '../LatexRenderer';
 
 const Objective = ({
   fieldKey,

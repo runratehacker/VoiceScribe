@@ -109,58 +109,46 @@ export const processToolCalls = (functionCalls, stateRef, callbacks) => {
 
     }
 
-    // 2. Function 2
-    // Response from Gemini to call fill_form_field
+    else if (call?.name === "fill_objective_answer" || call?.name === "fill_subjective_answer") {
 
-    else if (call?.name === "fill_form_field") {
-
-      // args object sent by Gemini back 
+      const isMcq = call.name === "fill_objective_answer";
       const args = call?.args || {};
-      const label = args.label;
-      const value = args.value;
-      const overwrite = args.overwrite || false;
+      const label = args.question_number;
 
-      // label -----> question 1 label
-      // value -----> answer
-      // overwrite -----> true/false 
-      // if true --> overwrites the previous answer 
-      // if false --> appends the new answer to the previous answer
+      let effectiveValue = isMcq ? args.option_label : args.value;
+      const effectiveOverwrite = isMcq ? true : (args.overwrite || false);
 
       const { formFields } = stateRef.current;
       const found = findField(formFields, label);
 
-      // If the question with the exact label is not found 
-      // error is sent back to gemini using toolsresponses array 
 
       if (!found) {
         toolResponses.push({
           id: call.id,
           name: call.name,
-          response: { output: `ERROR: Could not find any question with exact label "${label}". Call "get_current_screen_question" to see the correct valid labels on screen.` },
+          response: { output: `ERROR: Could not find question number "${label}". Call "get_current_screen_question" to see the current question.` },
         });
         continue;
       }
 
-      // Get the very latest answer so we don't accidentally overwrite anything
-      const isMcq = found.field.type === 'objective' || (found.field.options && found.field.options.length > 0);
-      let effectiveOverwrite = overwrite;
-      let effectiveValue = value;
 
-      if (isMcq) {
-        // Enforce single option selection for MCQs: always overwrite, never append
-        effectiveOverwrite = true;
-        const trimmed = String(value).trim();
-        if (found.field.options && Array.isArray(found.field.options)) {
-          const match = found.field.options.find(opt => 
-            opt.label.toLowerCase() === trimmed.toLowerCase() ||
-            trimmed.toLowerCase().startsWith(opt.label.toLowerCase() + '.') ||
-            trimmed.toLowerCase().startsWith(opt.label.toLowerCase() + ')') ||
-            trimmed.toLowerCase() === `option ${opt.label.toLowerCase()}`
-          );
-          if (match) {
-            effectiveValue = match.label;
-          }
-        }
+      const isObjectiveQuestion = found.field.type === 'objective';
+      if (isMcq !== isObjectiveQuestion) {
+        toolResponses.push({
+          id: call.id,
+          name: call.name,
+          response: { output: `ERROR: Question ${found.field.question_number} is ${isObjectiveQuestion ? 'objective. Use "fill_objective_answer"' : 'subjective. Use "fill_subjective_answer"'}.` },
+        });
+        continue;
+      }
+
+      if (effectiveValue === undefined || effectiveValue === null || String(effectiveValue).trim() === "") {
+        toolResponses.push({
+          id: call.id,
+          name: call.name,
+          response: { output: `ERROR: Missing answer. Pass ${isMcq ? '"option_label"' : '"value"'}.` },
+        });
+        continue;
       }
 
       const existingValue = found.field.value || "";
@@ -184,13 +172,11 @@ export const processToolCalls = (functionCalls, stateRef, callbacks) => {
 
     }
 
-    // 3. Function 3
-    // Response from Gemini to call reset_form_field
 
-    else if (call?.name === "reset_form_field") {
+    else if (call?.name === "reset_answer") {
 
       const args = call?.args || {};
-      const label = args.label;
+      const label = args.question_number;
 
       const { formFields } = stateRef.current;
       // if found returns the form fields . If not found it returns null
@@ -272,7 +258,7 @@ export const processToolCalls = (functionCalls, stateRef, callbacks) => {
     else if (call?.name === "goto_question") {
 
       const args = call?.args || {};
-      const label = args.label;
+      const label = args.question_number;
 
       const { formFields } = stateRef.current;
       const found = findField(formFields, label);
@@ -310,7 +296,7 @@ export const processToolCalls = (functionCalls, stateRef, callbacks) => {
     else if (call?.name === "read_recorded_answer") {
 
       const args = call?.args || {};
-      const label = args.label;
+      const label = args.question_number;
 
       const { formFields } = stateRef.current;
       const found = findField(formFields, label);

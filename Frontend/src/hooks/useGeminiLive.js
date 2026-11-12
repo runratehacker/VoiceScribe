@@ -3,7 +3,7 @@
 // We split the logic into smaller files (like geminiConfig, geminiTools, etc.) to keep this clean.
 
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { geminiTools } from '../services/gemini/tools';
+import { GeminiTools } from '../services/gemini/tools';
 import { getSetupPrompt, getCompletionPrompt, getSessionStartPrompt } from '../services/gemini/prompts';
 import { processToolCalls } from '../services/gemini/toolHandlers';
 import { buildWsUrl, buildSetupMessage, MAX_RECONNECT_RETRIES, BASE_RECONNECT_DELAY_MS, SESSION_RESET_EVERY_N_QUESTIONS } from '../services/gemini/config';
@@ -57,12 +57,14 @@ export const useGeminiLive = ({ onFieldFilled, onFieldReset, onAudioReceived, fo
       setWsState("connected");
       console.log(`Live WS ${isReconnect ? 're' : ''}connected`);
 
+      const activeFormFields = stateRef.current.formFields ?? formFields;
       const systemPrompt = getSetupPrompt(
-        stateRef.current.formFields ?? formFields,
+        activeFormFields,
         stateRef.current.currentKey
       );
+      const tools = GeminiTools(activeFormFields);
 
-      const setupMessage = buildSetupMessage(systemPrompt, geminiTools, {
+      const setupMessage = buildSetupMessage(systemPrompt, tools, {
         sessionHandle: sessionHandleRef.current,
         isReconnect,
       });

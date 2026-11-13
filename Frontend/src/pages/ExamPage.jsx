@@ -8,7 +8,7 @@ import { useAudioPlayback } from '../hooks/useAudioPlayback';
 import { useGeminiLive } from '../hooks/useGeminiLive';
 import { useAudioRecorder } from '../hooks/useAudioRecorder';
 import { usePaperQuestions } from '../hooks/usePaperQuestions';
-import { useQuestionNavigation } from '../hooks/useQuestionNavigation';
+import { useQuestNavi } from '../hooks/useQuestNavi';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import { API_BASE_URL } from '../config';
@@ -29,7 +29,7 @@ const VoiceAssistantUI = () => {
   }, [formid]);
 
   const {
-    currentQuestionIndex,
+    currQuestIndex,
     totalQuestions,
     currentKey,
     currentField,
@@ -40,7 +40,7 @@ const VoiceAssistantUI = () => {
     handleGoToQuestion,
     handleEndExam,
     isCompleted
-  } = useQuestionNavigation(formFields);
+  } = useQuestNavi(formFields);
 
   const messagesEndRef = useRef(null);
   const { enqueueAudio, stopPlayback } = useAudioPlayback();
@@ -199,7 +199,7 @@ const VoiceAssistantUI = () => {
           progressTotal={progressTotal}
           progressCompleted={progressCompleted}
           progressPending={progressPending}
-          currentQuestionIndex={currentQuestionIndex}
+          currentQuestionIndex={currQuestIndex}
           onGoToQuestion={handleGoToQuestion}
           onEndExam={handleEndExam}
           isCompleted={isCompleted}
@@ -252,8 +252,8 @@ const VoiceAssistantUI = () => {
             totalQuestions={totalQuestions}
             onPrev={handlePrev}
             onNext={handleNext}
-            hasPrev={currentQuestionIndex > 0}
-            hasNext={currentQuestionIndex < totalQuestions}
+            hasPrev={currQuestIndex > 0}
+            hasNext={currQuestIndex < totalQuestions}
             onSelectOption={(optionLabel) =>
               optionLabel ? onFieldFilled(currentKey, optionLabel, true) : onFieldReset(currentKey)
             }
@@ -274,8 +274,8 @@ const VoiceAssistantUI = () => {
             totalQuestions={totalQuestions}
             onPrev={handlePrev}
             onNext={handleNext}
-            hasPrev={currentQuestionIndex > 0}
-            hasNext={currentQuestionIndex < totalQuestions}
+            hasPrev={currQuestIndex > 0}
+            hasNext={currQuestIndex < totalQuestions}
             onClear={() => onFieldReset(currentKey)}
           />
         )}
@@ -294,9 +294,9 @@ const VoiceAssistantUI = () => {
           toggleMicrophone={toggleMicrophone}
           onPrev={!isCompleted ? handlePrev : null}
           onNext={!isCompleted ? handleNext : null}
-          hasPrev={currentQuestionIndex > 0}
-          hasNext={totalQuestions > 0 && currentQuestionIndex < totalQuestions}
-          isLastQuestion={totalQuestions > 0 && currentQuestionIndex === totalQuestions - 1}
+          hasPrev={currQuestIndex > 0}
+          hasNext={totalQuestions > 0 && currQuestIndex < totalQuestions}
+          isLastQuestion={totalQuestions > 0 && currQuestIndex === totalQuestions - 1}
         />
       </div>
     </div>

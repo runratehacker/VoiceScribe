@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { API_BASE_URL } from '../config';
-import { normalizeQuestionsData } from '../hooks/useFormFields';
+import { normalizeQuestionsData } from '../hooks/usePaperQuestions';
 
 
 const ORB_GRADIENTS = [

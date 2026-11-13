@@ -7,7 +7,7 @@ import ExamCompletedScreen from '../components/exam/ExamCompletedScreen';
 import { useAudioPlayback } from '../hooks/useAudioPlayback';
 import { useGeminiLive } from '../hooks/useGeminiLive';
 import { useAudioRecorder } from '../hooks/useAudioRecorder';
-import { useFormFields } from '../hooks/useFormFields';
+import { usePaperQuestions } from '../hooks/usePaperQuestions';
 import { useQuestionNavigation } from '../hooks/useQuestionNavigation';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
@@ -18,7 +18,7 @@ import { useAuth } from '../context/AuthContext';
 const VoiceAssistantUI = () => {
   const { formid } = useParams();
   const { user } = useAuth();
-  const { formFields, onFieldFilled, onFieldReset } = useFormFields(formid);
+  const { formFields, onFieldFilled, onFieldReset } = usePaperQuestions(formid);
 
   const studentId = user?.id || (localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user'))?.id : null) || 2;
 

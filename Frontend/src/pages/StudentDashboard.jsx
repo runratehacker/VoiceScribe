@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { API_BASE_URL } from '../config';
-import { normalizeQuestionsData } from '../hooks/usePaperQuestions';
+import { alterQuestionsData } from '../hooks/usePaperQuestions';
 
 
 const ORB_GRADIENTS = [
@@ -101,7 +101,7 @@ const StudentDashboard = () => {
           try {
             const fieldsRes = await axios.get(`${API_BASE_URL}/api/questions/${currentForm.id}`);
             const rawFields = fieldsRes.data;
-            fields = normalizeQuestionsData(rawFields, currentForm.id);
+            fields = alterQuestionsData(rawFields);
 
             const savedData = localStorage.getItem(`formFields_${currentForm.id}`);
             if (savedData) {

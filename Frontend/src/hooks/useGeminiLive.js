@@ -4,7 +4,7 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { GeminiTools } from '../services/gemini/tools';
-import { getSetupPrompt, getCompletionPrompt, getSessionStartPrompt } from '../services/gemini/prompts';
+import { getSetupPrompt, getCompletionPrompt, getSessionStartPrompt } from '../services/gemini/promptss';
 import { processToolCalls } from '../services/gemini/toolHandlers';
 import { buildWsUrl, buildSetupMessage, MAX_RECONNECT_RETRIES, BASE_RECONNECT_DELAY_MS, SESSION_RESET_EVERY_N_QUESTIONS } from '../services/gemini/config';
 import { useGeminiToken } from '../services/gemini/tokenManager';

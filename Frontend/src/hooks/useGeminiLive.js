@@ -6,7 +6,7 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { GeminiTools } from '../services/gemini/tools';
 import { getSetupPrompt, getCompletionPrompt, getSessionStartPrompt } from '../services/gemini/promptss';
 import { processToolCalls } from '../services/gemini/toolHandlers';
-import { buildWsUrl, buildSetupMessage, MAX_RECONNECT_RETRIES, BASE_RECONNECT_DELAY_MS, SESSION_RESET_EVERY_N_QUESTIONS } from '../services/gemini/config';
+import { buildWsUrl, buildSetupMessage, maxRetries, reconnectTime, resEveryNQuestions } from '../services/gemini/config';
 import { useGeminiToken } from '../services/gemini/tokenManager';
 import { parseWsMessage, categorizeMessage, MSG_TYPES } from '../services/gemini/messageParser';
 
@@ -66,7 +66,6 @@ export const useGeminiLive = ({ onFieldFilled, onFieldReset, onAudioReceived, fo
 
       const setupMessage = buildSetupMessage(systemPrompt, tools, {
         sessionHandle: sessionHandleRef.current,
-        isReconnect,
       });
 
       liveWsRef.current.send(JSON.stringify(setupMessage));
@@ -139,13 +138,12 @@ export const useGeminiLive = ({ onFieldFilled, onFieldReset, onAudioReceived, fo
         case MSG_TYPES.TOOL_CALL: {
 
           // Wrap onNextQuestion so we can count how many questions have been answered.
-          // Every SESSION_RESET_EVERY_N_QUESTIONS questions we silently restart the WS
           // to give Gemini a completely fresh context window.
-          const onNextQuestionWithReset = SESSION_RESET_EVERY_N_QUESTIONS > 0
+          const onNextQuestionWithReset = resEveryNQuestions > 0
             ? (...args) => {
               if (typeof onNextQuestion === 'function') onNextQuestion(...args);
               questionsAnsweredRef.current += 1;
-              if (questionsAnsweredRef.current % SESSION_RESET_EVERY_N_QUESTIONS === 0) {
+              if (questionsAnsweredRef.current % resEveryNQuestions === 0) {
                 console.warn(
                   `🔄 Session reset triggered after ${questionsAnsweredRef.current} questions. ` +
                   `Reconnecting for a fresh context window...`
@@ -322,8 +320,8 @@ export const useGeminiLive = ({ onFieldFilled, onFieldReset, onAudioReceived, fo
   const attemptReconnect = useCallback(async () => {
     if (userDisconnectedRef.current) return;
 
-    if (reconnectAttemptRef.current >= MAX_RECONNECT_RETRIES) {
-      console.error(`Max reconnection retries (${MAX_RECONNECT_RETRIES}) reached. Giving up.`);
+    if (reconnectAttemptRef.current >= maxRetries) {
+      console.error(`Max reconnection retries (${maxRetries}) reached. Giving up.`);
       setWsState("error");
       setMessages((prev) => [
         ...prev,
@@ -339,9 +337,9 @@ export const useGeminiLive = ({ onFieldFilled, onFieldReset, onAudioReceived, fo
 
     reconnectAttemptRef.current += 1;
     const attempt = reconnectAttemptRef.current;
-    const delay = BASE_RECONNECT_DELAY_MS * Math.pow(2, attempt - 1); // 1s, 2s, 4s
+    const delay = reconnectTime * Math.pow(2, attempt - 1); // 1s, 2s, 4s
 
-    console.log(`Reconnection attempt ${attempt}/${MAX_RECONNECT_RETRIES} in ${delay}ms...`);
+    console.log(`Reconnection attempt ${attempt}/${maxRetries} in ${delay}ms...`);
     setWsState("reconnecting");
 
     reconnectTimerRef.current = setTimeout(async () => {
@@ -354,7 +352,7 @@ export const useGeminiLive = ({ onFieldFilled, onFieldReset, onAudioReceived, fo
         _connectInternal({ isReconnect: true, resolve: null, reject: null });
       } catch (err) {
         console.error(`Reconnection attempt ${attempt} failed:`, err);
-        if (reconnectAttemptRef.current < MAX_RECONNECT_RETRIES) {
+        if (reconnectAttemptRef.current < maxRetries) {
           attemptReconnect();
         } else {
           setWsState("error");

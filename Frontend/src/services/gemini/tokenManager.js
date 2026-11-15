@@ -3,7 +3,7 @@
 
 import { useRef, useCallback } from 'react';
 import axios from 'axios';
-import { getTokenApiUrl, TOKEN_REFRESH_BUFFER_MS, GEMINI_MODEL } from './config';
+import { getTokenApiUrl, tokenRefreshBuffer } from './config';
 
 export const useGeminiToken = () => {
   const tokenRef = useRef(null);                  // The actual token string
@@ -14,7 +14,7 @@ export const useGeminiToken = () => {
   // Asks our backend for a brand new token
   const fetchToken = useCallback(async () => {
 
-    const { data } = await axios.get(getTokenApiUrl(GEMINI_MODEL.replace('models/', '')));
+    const { data } = await axios.get(getTokenApiUrl());
 
     if (!data?.token) throw new Error("Ephemeral token missing from backend response");
     tokenRef.current = data.token;
@@ -44,7 +44,7 @@ export const useGeminiToken = () => {
     if (!tokenExpiryRef.current) return;
 
     const msUntilExpiry = tokenExpiryRef.current.getTime() - Date.now();
-    const refreshIn = Math.max(msUntilExpiry - TOKEN_REFRESH_BUFFER_MS, 0);
+    const refreshIn = Math.max(msUntilExpiry - tokenRefreshBuffer, 0);
 
     console.log(`Token refresh scheduled in ${Math.round(refreshIn / 1000)}s (expires in ${Math.round(msUntilExpiry / 1000)}s)`);
 

@@ -24,7 +24,6 @@ export const useGeminiLive = ({ onFieldFilled, onFieldReset, onAudioReceived, fo
   const isLiveReadyRef = useRef(false);
   const sessionHandleRef = useRef(null);
   const cumulativeAudioTokensRef = useRef(0);
-  const prevPromptTokensRef = useRef(0); // tracks last promptTokenCount to detect API-side compression
   const questionsAnsweredRef = useRef(0); // counts next_question calls to trigger periodic session resets
   const sessionTokensRef = useRef({ prompt: 0, response: 0, thoughts: 0, toolUse: 0, total: 0 }); // cumulative across all turns
 
@@ -161,7 +160,6 @@ export const useGeminiLive = ({ onFieldFilled, onFieldReset, onAudioReceived, fo
                   try {
                     await fetchToken();
                     scheduleTokenRefresh();
-                    prevPromptTokensRef.current = 0;
                     cumulativeAudioTokensRef.current = 0;
                     sessionHandleRef.current = null; // force brand-new session, not a resumption
                     _connectInternal({ isReconnect: false, resolve: null, reject: null });
@@ -254,25 +252,6 @@ export const useGeminiLive = ({ onFieldFilled, onFieldReset, onAudioReceived, fo
 
             // Reset the cumulative audio token counter for the next turn
             cumulativeAudioTokensRef.current = 0;
-
-            // Detect API-side context window compression:
-            // If promptTokenCount drops noticeably from the previous turn, the server
-            // silently trimmed the context. There's no dedicated event for this —
-            // a significant decrease is the only signal we get.
-            const prev_prompt = prevPromptTokensRef.current;
-            const curr_prompt = newContext.promptTokenCount;
-            if (prev_prompt > 0 && curr_prompt < prev_prompt) {
-              const dropped = prev_prompt - curr_prompt;
-              const dropPct = ((dropped / prev_prompt) * 100).toFixed(1);
-              if (dropped > 500) {
-                console.warn(
-                  `📉 Context window compression detected! ` +
-                  `Prompt tokens dropped from ${prev_prompt.toLocaleString()} → ${curr_prompt.toLocaleString()} ` +
-                  `(−${dropped.toLocaleString()} tokens, −${dropPct}%)`
-                );
-              }
-            }
-            prevPromptTokensRef.current = curr_prompt;
 
             return { contextSize: newContext, billedTokens: newBilled, limits, contextPercentage };
           });

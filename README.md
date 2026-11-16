@@ -63,101 +63,92 @@ When the Agent asks [ What is your name ? ] . User replies [ My name is xyz ] . 
 
 ---
 
-## Setup
-
-### 1. Environment Variables
-
-Create a `.env` file inside the `Backend/` directory:
-
-```env
-GEMINI_API_KEY="Your Gemini API key"
-```
-
-### 2. Backend Setup
-```bash
-cd Backend
-
-npm install
-
-npm run dev
-```
-
-### 3. Frontend Setup
-```bash
-cd Frontend
-
-npm install
-
-npm run dev
-```
----
-
 ## Project Structure
 
 ```text
 .
+├── .github
+│   └── workflows
+│       └── ci.yml
 ├── assets
 │   ├── architecture.png
+│   ├── databaseDesign.png
 │   └── systemPrompt.png
 ├── Backend
 │   ├── controllers
-│   │   ├── Form
-│   │   │   ├── downloadControllers.js
 │   │   ├── authController.js
+│   │   ├── downloadController.js
+│   │   ├── evaluatedController.js
 │   │   ├── formController.js
-│   │   └── liveTokenController.js
-│   ├── models
-│   │   └── formFields.js
+│   │   ├── generateController.js
+│   │   ├── latexController.js
+│   │   ├── liveTokenController.js
+│   │   └── uploadController.js
+│   ├── middleware
+│   │   ├── auth.js
+│   │   └── checkRole.js
 │   ├── routes
 │   │   ├── authRoute.js
-│   │   ├── FormRoute.js
-│   │   └── LiveRoute.js
+│   │   ├── liveRoute.js
+│   │   └── paperRoute.js
 │   ├── template
-│   │   ├── templatePDFs
-│   ├── uploads
-│   │   └── papers.json
+│   │   ├── fonts
+│   │   │   ├── segoeui.ttf
+│   │   │   └── segoeuib.ttf
+│   │   ├── generatePaper.js
+│   │   ├── otpEmail.html
+│   │   ├── reqDownloadExample.json
+│   │   ├── reqExample.json
+│   │   └── reqQuestions.json
 │   ├── .env.example
+│   ├── mailTest.js
 │   ├── package.json
-│   └── server.js
+│   ├── server.js
+│   └── supabase.js
 ├── Frontend
 │   ├── public
 │   │   ├── favicon.svg
 │   │   └── icons.svg
 │   ├── src
+│   │   ├── api
+│   │   │   └── axiosSetup.js
 │   │   ├── components
-│   │   │   ├── ExamCompletedScreen.jsx
-│   │   │   ├── FormList.jsx
-│   │   │   ├── Header.jsx
+│   │   │   ├── exam
+│   │   │   │   ├── ExamCompletedScreen.jsx
+│   │   │   │   ├── Header.jsx
+│   │   │   │   ├── Objective.jsx
+│   │   │   │   ├── Subjective.jsx
+│   │   │   │   └── VoiceFooter.jsx
 │   │   │   ├── LatexRenderer.jsx
-│   │   │   ├── Livewaveform.jsx
-│   │   │   ├── Login.jsx
-│   │   │   ├── Objective.jsx
-│   │   │   ├── Subjective.jsx
-│   │   │   ├── TeacherDashboard.jsx
-│   │   │   └── VoiceFooter.jsx
+│   │   │   └── LiveWaveform.jsx
 │   │   ├── context
 │   │   │   └── AuthContext.jsx
 │   │   ├── hooks
-│   │   │   ├── geminiConfig.js
-│   │   │   ├── geminiMessageParser.js
-│   │   │   ├── geminiPrompts.js
-│   │   │   ├── geminiTokenManager.js
-│   │   │   ├── geminiToolHandlers.js
-│   │   │   ├── geminiTools.js
 │   │   │   ├── useAudioPlayback.js
 │   │   │   ├── useAudioRecorder.js
 │   │   │   ├── useForm.js
-│   │   │   ├── useFormFields.js
 │   │   │   ├── useGeminiLive.js
-│   │   │   └── useQuestionNavigation.js
-│   │   ├── lib
-│   │   │   └── utils.js
+│   │   │   ├── usePaperQuestions.js
+│   │   │   └── useQuestNavi.js
+│   │   ├── pages
+│   │   │   ├── ExamPage.jsx
+│   │   │   ├── ForgotPassword.jsx
+│   │   │   ├── Login.jsx
+│   │   │   ├── StudentDashboard.jsx
+│   │   │   └── TeacherDashboard.jsx
+│   │   ├── services
+│   │   │   └── gemini
+│   │   │       ├── config.js
+│   │   │       ├── messageParser.js
+│   │   │       ├── promptss.js
+│   │   │       ├── tokenManager.js
+│   │   │       ├── toolHandlers.js
+│   │   │       └── tools.js
 │   │   ├── utils
 │   │   │   ├── audioUtils.js
-│   │   │   └── waveformUtils.js
+│   │   │   └── cn.js
 │   │   ├── App.jsx
 │   │   ├── config.js
-│   │   ├── Frontpage.jsx
 │   │   ├── index.css
 │   │   └── main.jsx
 │   ├── .env.example
@@ -167,7 +158,6 @@ npm run dev
 │   ├── vercel.json
 │   └── vite.config.js
 ├── LICENSE
-├── LoopHole.md
 └── README.md
 ```
 
